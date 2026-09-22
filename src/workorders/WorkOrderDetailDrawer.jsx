@@ -15,7 +15,6 @@ export default function WorkOrderDetailDrawer({
   const {
     db,
     currentUser,
-    updateWorkOrder,
     deleteWorkOrder,
   } = useApp();
 
@@ -23,7 +22,6 @@ export default function WorkOrderDetailDrawer({
   if (!wo) return null;
 
   const project = db.projects.find((p) => p.id === wo.projectId);
-  const ptd = db.ptds.find((p) => p.id === wo.ptdId);
   const assignee = db.users.find((u) => u.id === wo.assignee);
 
   const isPm = currentUser?.role === 'pm' || currentUser?.role === 'admin';
@@ -151,7 +149,7 @@ export default function WorkOrderDetailDrawer({
             </div>
           </div>
 
-          {/* Work Progress Update */}
+          {/* Work Progress — read-only on PM side; set by the assigned developer */}
           <div className={`rounded-2xl border p-4.5 ${borderCls}`}>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -165,7 +163,7 @@ export default function WorkOrderDetailDrawer({
               </span>
             </div>
 
-            <div className={`h-2 w-full overflow-hidden rounded-full mb-3.5 ${dark ? 'bg-zinc-800' : 'bg-zinc-200'}`}>
+            <div className={`h-2 w-full overflow-hidden rounded-full ${dark ? 'bg-zinc-800' : 'bg-zinc-200'}`}>
               <div
                 className={`h-full rounded-full transition-all ${
                   (wo.progress ?? 0) >= 100
@@ -178,46 +176,9 @@ export default function WorkOrderDetailDrawer({
               />
             </div>
 
-            <div className="flex items-center gap-3">
-              <input
-                type="range"
-                min="0"
-                max="100"
-                step="5"
-                value={wo.progress ?? 0}
-                onChange={(e) => {
-                  const val = Number(e.target.value);
-                  updateWorkOrder(wo.id, {
-                    progress: val,
-                    status: val === 100 ? 'completed' : val > 0 && wo.status === 'not-started' ? 'in-progress' : wo.status,
-                  });
-                }}
-                className="flex-1 accent-violet-500 cursor-pointer"
-              />
-              <div className="flex items-center gap-1">
-                {[0, 25, 50, 75, 100].map((pct) => (
-                  <button
-                    key={pct}
-                    type="button"
-                    onClick={() => {
-                      updateWorkOrder(wo.id, {
-                        progress: pct,
-                        status: pct === 100 ? 'completed' : pct > 0 && wo.status === 'not-started' ? 'in-progress' : wo.status,
-                      });
-                    }}
-                    className={`rounded-lg px-2 py-1 text-[10px] font-semibold transition-colors cursor-pointer ${
-                      (wo.progress ?? 0) === pct
-                        ? 'bg-violet-600 text-white'
-                        : dark
-                        ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                        : 'bg-zinc-200 text-zinc-600 hover:bg-zinc-300'
-                    }`}
-                  >
-                    {pct}%
-                  </button>
-                ))}
-              </div>
-            </div>
+            <p className={`mt-2.5 text-[11px] ${mutedText}`}>
+              Updated by {assignee?.name || 'the assigned developer'} as work proceeds.
+            </p>
           </div>
 
           {/* Description */}

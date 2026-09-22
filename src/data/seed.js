@@ -8,7 +8,7 @@ export function createSeed() {
   const today = new Date().toISOString().slice(0, 10);
 
   return {
-    _seedVersion: 12,
+    _seedVersion: 13,
 
     users: [
       { id: 'u1', username: 'admin', password: 'admin', name: 'Ajoy Kumar', role: 'pm', title: 'Project Manager' },
@@ -99,6 +99,39 @@ export function createSeed() {
     ],
 
     blockers: [],
+
+    files: [
+      // ---------- Client reference documents captured during lead / order-taking ----------
+      { id: 'f1', name: 'Nova Finance — Logo.png', type: 'Logo', size: '120 KB', client: 'Nova Finance', projectId: 'p1', ptdId: null, workOrderId: null, uploadedBy: 'Leads Desk', date: isoDaysFromNow(-52), source: 'leads' },
+      { id: 'f2', name: 'Business Card — Nova Finance.pdf', type: 'Business Card', size: '84 KB', client: 'Nova Finance', projectId: 'p1', ptdId: null, workOrderId: null, uploadedBy: 'Leads Desk', date: isoDaysFromNow(-52), source: 'leads' },
+      { id: 'f3', name: 'Order Confirmation — NF-2211.pdf', type: 'Order Document', size: '210 KB', client: 'Nova Finance', projectId: 'p1', ptdId: null, workOrderId: null, uploadedBy: 'Leads Desk', date: isoDaysFromNow(-50), source: 'leads' },
+      { id: 'f4', name: 'Zenith Bank — Logo.svg', type: 'Logo', size: '45 KB', client: 'Zenith Bank', projectId: 'p2', ptdId: null, workOrderId: null, uploadedBy: 'Leads Desk', date: isoDaysFromNow(-72), source: 'leads' },
+      { id: 'f5', name: 'Business Card — Zenith Bank.pdf', type: 'Business Card', size: '96 KB', client: 'Zenith Bank', projectId: 'p2', ptdId: null, workOrderId: null, uploadedBy: 'Leads Desk', date: isoDaysFromNow(-72), source: 'leads' },
+      { id: 'f6', name: 'KYC Verification — Zenith.pdf', type: 'Verification', size: '540 KB', client: 'Zenith Bank', projectId: 'p2', ptdId: null, workOrderId: null, uploadedBy: 'Leads Desk', date: isoDaysFromNow(-70), source: 'leads' },
+      { id: 'f7', name: 'MediCare Group — Logo.png', type: 'Logo', size: '110 KB', client: 'MediCare Group', projectId: 'p3', ptdId: null, workOrderId: null, uploadedBy: 'Leads Desk', date: isoDaysFromNow(-22), source: 'leads' },
+      { id: 'f8', name: 'Order Reference — MX-2207.pdf', type: 'Order Document', size: '180 KB', client: 'MediCare Group', projectId: 'p3', ptdId: null, workOrderId: null, uploadedBy: 'Leads Desk', date: isoDaysFromNow(-20), source: 'leads' },
+
+      // ---------- Project / work order files (manual) ----------
+      { id: 'f9', name: 'OAuth2 API Documentation.pdf', type: 'Documentation', size: '640 KB', client: 'Nova Finance', projectId: 'p1', ptdId: 'p1t1', workOrderId: 'WORK-1007', uploadedBy: 'Ajoy Kumar', date: isoDaysFromNow(-9), source: 'manual' },
+      { id: 'f10', name: 'Core Banking API Spec.docx', type: 'Documentation', size: '1.2 MB', client: 'Zenith Bank', projectId: 'p2', ptdId: 'p2t1', workOrderId: null, uploadedBy: 'Ajoy Kumar', date: isoDaysFromNow(-15), source: 'manual' },
+      { id: 'f11', name: 'Portal UX Wireframes.fig', type: 'Design', size: '4.8 MB', client: 'Nova Finance', projectId: 'p1', ptdId: 'p1t2', workOrderId: null, uploadedBy: 'Arun Dev', date: isoDaysFromNow(-4), source: 'manual' },
+    ],
+
+    fileRequests: [
+      {
+        id: 'fr1',
+        fileName: 'Latest Transaction Schema.pdf',
+        reason: 'Need the current transaction schema to finish the reconciliation engine.',
+        requestedBy: 'Rahul Sharma',
+        requestedById: 'u2',
+        requestedTo: 'Project Manager',
+        workOrderId: 'WORK-1004',
+        projectId: 'p2',
+        dateRequested: isoDaysFromNow(-1),
+        requiredDate: isoDaysFromNow(1),
+        status: 'requested',
+      },
+    ],
 
     milestones: [
       { id: 'm1', projectId: 'p1', name: 'Requirement', status: 'done' },

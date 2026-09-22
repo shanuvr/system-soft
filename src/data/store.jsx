@@ -4,7 +4,7 @@ import { createSeed } from './seed';
 
 const DB_KEY = 'system-soft:db';
 const SESSION_KEY = 'system-soft:session';
-const SEED_VERSION = 12;
+const SEED_VERSION = 13;
 
 function readKey(key) {
   try {
@@ -659,13 +659,30 @@ export function AppProvider({ children }) {
     const today = new Date().toISOString().slice(0, 10);
     const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
     const target = db.workOrders.find((w) => w.id === workOrderId);
+    const fileName = (requestData.fileName || '').trim();
+    if (!fileName) return;
+
+    const newRequest = {
+      id: uid('fr'),
+      fileName,
+      reason: requestData.reason?.trim() || '',
+      requestedBy: currentUser?.name || 'User',
+      requestedById: currentUser?.id || null,
+      requestedTo: requestData.requestedTo || 'Project Manager',
+      workOrderId: workOrderId || null,
+      projectId: requestData.projectId || target?.projectId || null,
+      dateRequested: today,
+      requiredDate: requestData.requiredDate || '',
+      status: 'requested',
+    };
 
     setDb((prev) => ({
       ...prev,
+      fileRequests: [newRequest, ...(prev.fileRequests || [])],
       notifications: [
         {
           id: uid('n'),
-          title: `File request: "${requestData.fileName}" requested for "${target?.title || 'Work Order'}"`,
+          title: `File request: "${fileName}" requested for "${target?.title || 'Work Order'}"`,
           read: false,
         },
         ...(prev.notifications || []),
@@ -677,10 +694,129 @@ export function AppProvider({ children }) {
           time,
           actor: currentUser?.name || 'User',
           projectId: target?.projectId,
-          text: `requested file "${requestData.fileName}" for "${target?.title}"`,
+          text: `requested file "${fileName}" for "${target?.title || 'a work order'}"`,
         },
         ...(prev.activity || []),
       ],
+    }));
+  };
+
+  const addFile = (fileData) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const name = (fileData.name || '').trim();
+    if (!name) return;
+    const project = db.projects.find((p) => p.id === fileData.projectId);
+    const newFile = {
+      id: uid('f'),
+      name,
+      type: fileData.type || 'Document',
+      size: fileData.size?.trim() || '—',
+      client: fileData.client?.trim() || project?.client || '',
+      projectId: fileData.projectId || null,
+      ptdId: fileData.ptdId || null,
+      workOrderId: fileData.workOrderId || null,
+      uploadedBy: currentUser?.name || 'User',
+      date: today,
+      version: 1,
+      source: 'manual',
+    };
+
+    setDb((prev) => ({
+      ...prev,
+      files: [newFile, ...(prev.files || [])],
+      activity: [
+        {
+          id: uid('a'),
+          date: today,
+          time,
+          actor: currentUser?.name || 'User',
+          projectId: newFile.projectId,
+          text: `uploaded file "${name}"${project ? ` for ${project.name}` : ''}`,
+        },
+        ...(prev.activity || []),
+      ],
+    }));
+  };
+
+  const updateFileRequest = (requestId, status, fileData = {}) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const request = db.fileRequests?.find((r) => r.id === requestId);
+    if (!request) return;
+
+    setDb((prev) => {
+      const project = prev.projects.find((p) => p.id === request.projectId);
+      const target = prev.workOrders.find((w) => w.id === request.workOrderId);
+
+      if (status === 'uploaded') {
+        const name = fileData.name?.trim() || request.fileName;
+        const newFile = {
+          id: uid('f'),
+          name,
+          type: fileData.type || 'Document',
+          size: fileData.size?.trim() || '—',
+          client: project?.client || '',
+          projectId: request.projectId,
+          ptdId: target?.ptdId || null,
+          workOrderId: request.workOrderId,
+          uploadedBy: currentUser?.name || 'User',
+          date: today,
+          version: 1,
+          source: 'manual',
+        };
+        return {
+          ...prev,
+          files: [newFile, ...(prev.files || [])],
+          fileRequests: (prev.fileRequests || []).map((r) =>
+            r.id === requestId ? { ...r, status: 'uploaded', resolvedDate: today, fileName: name } : r,
+          ),
+          notifications: [
+            {
+              id: uid('n'),
+              title: `File "${name}" uploaded and marked for "${request.requestedBy}"`,
+              read: false,
+            },
+            ...(prev.notifications || []),
+          ],
+          activity: [
+            {
+              id: uid('a'),
+              date: today,
+              time,
+              actor: currentUser?.name || 'User',
+              projectId: request.projectId,
+              text: `uploaded "${name}" to fulfil ${request.requestedBy}'s file request`,
+            },
+            ...(prev.activity || []),
+          ],
+        };
+      }
+
+      return {
+        ...prev,
+        fileRequests: (prev.fileRequests || []).map((r) =>
+          r.id === requestId ? { ...r, status: 'received', resolvedDate: today } : r,
+        ),
+        activity: [
+          {
+            id: uid('a'),
+            date: today,
+            time,
+            actor: currentUser?.name || 'User',
+            projectId: request.projectId,
+            text: `confirmed receipt of "${request.fileName}"`,
+          },
+          ...(prev.activity || []),
+        ],
+      };
+    });
+  };
+
+  const deleteFile = (id) => {
+    setDb((prev) => ({
+      ...prev,
+      files: (prev.files || []).filter((f) => f.id !== id),
     }));
   };
 
@@ -713,6 +849,9 @@ export function AppProvider({ children }) {
         logHours,
         addWorkOrderFile,
         requestWorkOrderFile,
+        addFile,
+        updateFileRequest,
+        deleteFile,
       }}
     >
       {children}
