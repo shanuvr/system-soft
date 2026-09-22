@@ -4,7 +4,7 @@ import { createSeed } from './seed';
 
 const DB_KEY = 'system-soft:db';
 const SESSION_KEY = 'system-soft:session';
-const SEED_VERSION = 3;
+const SEED_VERSION = 6;
 
 function readKey(key) {
   try {
@@ -30,6 +30,11 @@ function uid(prefix) {
 function loadDb() {
   const persisted = readKey(DB_KEY);
   if (persisted && persisted._seedVersion === SEED_VERSION) return persisted;
+  if (persisted && persisted._seedVersion !== SEED_VERSION) {
+    console.warn(
+      `[system-soft] Seed data updated (version ${persisted._seedVersion} -> ${SEED_VERSION}); stored db was reset to the new seed.`,
+    );
+  }
   return createSeed();
 }
 
@@ -58,26 +63,6 @@ export function AppProvider({ children }) {
 
   const resetDb = () => {
     setDb(createSeed());
-  };
-
-  const createPtd = (data) => {
-    const ptd = {
-      id: uid('ptd'),
-      ref: data.ref || 'PTD-0000',
-      name: data.name,
-      description: data.description || '',
-      projectId: data.projectId || null,
-      source: 'manual',
-      receivedDate: data.receivedDate || new Date().toISOString().slice(0, 10),
-      estimatedHours: Number(data.estimatedHours) || 0,
-      allocatedHours: 0,
-      usedHours: 0,
-      progress: 0,
-      deadline: data.deadline || '',
-      status: 'received',
-    };
-    setDb((prev) => ({ ...prev, ptds: [...prev.ptds, ptd] }));
-    return ptd;
   };
 
   const updatePtd = (id, patch) => {
@@ -123,9 +108,63 @@ export function AppProvider({ children }) {
     return newWorkOrders.length;
   };
 
+  const updateWorkOrder = (id, patch) => {
+    setDb((prev) => {
+      const target = prev.workOrders.find((w) => w.id === id);
+      if (!target) return prev;
+      const workOrders = prev.workOrders.map((w) => (w.id === id ? { ...w, ...patch } : w));
+      const ptdWos = workOrders.filter((w) => w.ptdId === target.ptdId);
+      return {
+        ...prev,
+        workOrders,
+        ptds: prev.ptds.map((p) =>
+          p.id === target.ptdId
+            ? {
+                ...p,
+                allocatedHours: ptdWos.reduce((s, w) => s + (w.estimatedHours || 0), 0),
+                usedHours: ptdWos.reduce((s, w) => s + (w.actualHours || 0), 0),
+              }
+            : p,
+        ),
+      };
+    });
+  };
+
+  const deleteWorkOrder = (id) => {
+    setDb((prev) => {
+      const target = prev.workOrders.find((w) => w.id === id);
+      if (!target) return prev;
+      const ptdWos = prev.workOrders.filter((w) => w.ptdId === target.ptdId && w.id !== id);
+      return {
+        ...prev,
+        workOrders: prev.workOrders.filter((w) => w.id !== id),
+        ptds: prev.ptds.map((p) =>
+          p.id === target.ptdId
+            ? {
+                ...p,
+                allocatedHours: ptdWos.reduce((s, w) => s + (w.estimatedHours || 0), 0),
+                usedHours: ptdWos.reduce((s, w) => s + (w.actualHours || 0), 0),
+                status: ptdWos.length === 0 && p.status === 'in-progress' ? 'not-started' : p.status,
+              }
+            : p,
+        ),
+      };
+    });
+  };
+
   return (
     <AppContext.Provider
-      value={{ db, currentUser, login, logout, resetDb, createPtd, updatePtd, createWorkOrders }}
+      value={{
+        db,
+        currentUser,
+        login,
+        logout,
+        resetDb,
+        updatePtd,
+        createWorkOrders,
+        updateWorkOrder,
+        deleteWorkOrder,
+      }}
     >
       {children}
     </AppContext.Provider>

@@ -1,6 +1,6 @@
 import { LayoutGrid } from 'lucide-react';
 
-function DockItem({ label, active, activeColor, dotColor, onClick, children }) {
+function DockItem({ label, active, activeColor, idleColor, dotColor, onClick, children }) {
   return (
     <button
       onClick={onClick}
@@ -13,8 +13,8 @@ function DockItem({ label, active, activeColor, dotColor, onClick, children }) {
         {label}
       </span>
       <span
-        className={`flex items-center justify-center transition-transform duration-150 group-hover:scale-110 group-active:scale-95 ${
-          active ? activeColor : ''
+        className={`flex items-center justify-center transition-all duration-150 group-hover:scale-110 group-active:scale-95 ${
+          active ? activeColor : idleColor
         }`}
       >
         {children}
@@ -38,6 +38,7 @@ export default function Dock({
   accentText = 'text-violet-500',
   dotColor = 'bg-violet-500',
 }) {
+  const idleColor = dark ? 'text-zinc-200 hover:text-violet-300' : 'text-zinc-600 hover:text-violet-600';
   return (
     <nav
       className={`flex items-end gap-1 rounded-2xl border px-2 pb-1 pt-2 backdrop-blur-md transition-colors ${
@@ -50,6 +51,7 @@ export default function Dock({
         label="Show Applications"
         active={showApps}
         activeColor={accentText}
+        idleColor={idleColor}
         dotColor={dotColor}
         onClick={onToggleApps}
       >
@@ -63,6 +65,7 @@ export default function Dock({
           label={app.name}
           active={activeApp === app.id}
           activeColor={accentText}
+          idleColor={idleColor}
           dotColor={dotColor}
           onClick={() => onSelectApp(app.id)}
         >

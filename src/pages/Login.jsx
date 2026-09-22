@@ -159,7 +159,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#050505] text-zinc-300 font-mono text-[14px] leading-relaxed p-4 sm:p-6 flex flex-col select-text">
+    <div className="min-h-full w-full bg-[#050505] text-zinc-300 font-mono text-[14px] leading-relaxed p-4 sm:p-6 flex flex-col select-text">
       {/* Terminal scrollback */}
       <div className="max-w-3xl mx-auto w-full flex-1 overflow-y-auto">
         {/* Boot sequence keeps scrolling, data always stays on screen */}

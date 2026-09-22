@@ -7,6 +7,7 @@ import { appsForRole } from '../data/dockConfig.js';
 import { useApp } from '../data/context.js';
 import PMDashboard from '../pm/Dashboard.jsx';
 import PTDApp from '../pm/PTDApp.jsx';
+import Projects from '../pm/Projects.jsx';
 import Placeholder from '../views/Placeholder.jsx';
 
 const HOME = '/app/dashboard';
@@ -40,6 +41,7 @@ export default function AppShell({ initialApp = 'dashboard' }) {
   const [dark, setDark] = useState(readTheme);
   const [activeApp] = useState(initialApp);
   const [showApps, setShowApps] = useState(false);
+  const [navCount, setNavCount] = useState(0);
   const [query, setQuery] = useState('');
   const [now, setNow] = useState(() => getClock());
 
@@ -79,7 +81,10 @@ export default function AppShell({ initialApp = 'dashboard' }) {
       return <PMDashboard dark={dark} />;
     }
     if (activeApp === 'ptds' && role !== 'dev') {
-      return <PTDApp dark={dark} />;
+      return <PTDApp key={navCount} dark={dark} />;
+    }
+    if (activeApp === 'projects' && role !== 'dev') {
+      return <Projects key={navCount} dark={dark} />;
     }
     return <Placeholder title={active.name} icon={active.icon} dark={dark} key={active.id} />;
   };
@@ -88,7 +93,10 @@ export default function AppShell({ initialApp = 'dashboard' }) {
   const panelBorder = dark ? 'border-zinc-800' : 'border-zinc-200';
   const contentOn = dark ? 'text-zinc-400' : 'text-zinc-500';
 
-  const selectApp = (id) => navigate(`/app/${id}`);
+  const selectApp = (id) => {
+    setNavCount((c) => c + 1);
+    navigate(`/app/${id}`);
+  };
 
   const handleLogout = () => {
     logout();
@@ -97,7 +105,7 @@ export default function AppShell({ initialApp = 'dashboard' }) {
 
   return (
     <div
-      className={`page-fade-in relative flex h-screen w-full flex-col font-sans transition-colors duration-300 ${
+      className={`relative flex h-full w-full flex-col font-sans transition-colors duration-300 ${
         dark ? 'bg-zinc-900' : 'bg-zinc-100'
       }`}
     >
@@ -160,7 +168,7 @@ export default function AppShell({ initialApp = 'dashboard' }) {
       </header>
 
       {/* Workspace content */}
-      <main className="flex flex-1 flex-col overflow-y-auto">{renderView()}</main>
+      <main className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden">{renderView()}</main>
 
       {/* Bottom dock */}
       <div className="flex items-end justify-center pb-3">

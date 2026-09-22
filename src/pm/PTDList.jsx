@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Plus, Search, X, ChevronRight } from 'lucide-react';
+import { Search, ChevronRight } from 'lucide-react';
 import { useApp } from '../data/context.js';
 import { PTD_STATUS_LABELS } from './ptdMeta.js';
-import { PtdStatusBadge, SourceBadge } from './badges.jsx';
+import { PtdStatusBadge } from './badges.jsx';
 
 const inputCls = (dark) =>
   `w-full rounded-lg border px-3 py-2 text-sm outline-none transition-colors focus:border-violet-500 ${
@@ -11,25 +11,11 @@ const inputCls = (dark) =>
       : 'border-zinc-300 bg-white text-zinc-800 placeholder-zinc-400'
   }`;
 
-function emptyForm() {
-  return {
-    name: '',
-    ref: '',
-    description: '',
-    projectId: '',
-    estimatedHours: '',
-    deadline: '',
-    receivedDate: new Date().toISOString().slice(0, 10),
-  };
-}
-
 export default function PTDList({ dark, onOpen }) {
-  const { db, createPtd } = useApp();
+  const { db } = useApp();
 
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
-  const [showNew, setShowNew] = useState(false);
-  const [form, setForm] = useState(emptyForm);
 
   const projectsById = Object.fromEntries(db.projects.map((p) => [p.id, p]));
   const statusOptions = ['all', ...Array.from(new Set(db.ptds.map((p) => p.status)))];
@@ -41,17 +27,6 @@ export default function PTDList({ dark, onOpen }) {
     return matchesQuery && matchesFilter;
   });
 
-  const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
-
-  const submitNew = (e) => {
-    e.preventDefault();
-    if (!form.name.trim()) return;
-    createPtd({ ...form, projectId: form.projectId || null });
-    setShowNew(false);
-    setForm(emptyForm());
-    setFilter('all');
-  };
-
   const panel = dark ? 'border-zinc-800 bg-zinc-900/70' : 'border-zinc-200 bg-white/80';
   const heading = dark ? 'text-zinc-200' : 'text-zinc-800';
   const muted = dark ? 'text-zinc-500' : 'text-zinc-500';
@@ -59,20 +34,11 @@ export default function PTDList({ dark, onOpen }) {
 
   return (
     <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className={`text-2xl font-bold ${heading}`}>PTDs</h1>
-          <p className={`mt-1 text-xs ${muted}`}>
-            Incoming technical data from the accounts system — split each PTD into work orders.
-          </p>
-        </div>
-        <button
-          onClick={() => setShowNew(true)}
-          className="flex items-center gap-1.5 rounded-lg bg-violet-500 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-violet-600 cursor-pointer"
-        >
-          <Plus className="h-4 w-4" />
-          New PTD
-        </button>
+      <div className="mb-5">
+        <h1 className={`text-2xl font-bold ${heading}`}>PTDs</h1>
+        <p className={`mt-1 text-xs ${muted}`}>
+          Incoming technical data from the accounts system — split each PTD into work orders.
+        </p>
       </div>
 
       {/* Search + status filter */}
@@ -111,7 +77,6 @@ export default function PTDList({ dark, onOpen }) {
           <thead>
             <tr className={`border-b text-xs uppercase tracking-wide ${muted}`}>
               <th className="px-4 py-3 font-medium">PTD</th>
-              <th className="px-4 py-3 font-medium">Source</th>
               <th className="px-4 py-3 font-medium">Project</th>
               <th className="px-4 py-3 font-medium">Hours</th>
               <th className="px-4 py-3 font-medium">Progress</th>
@@ -134,9 +99,6 @@ export default function PTDList({ dark, onOpen }) {
                   <div className={`mt-0.5 max-w-[320px] truncate text-xs ${muted}`}>
                     {p.description || '—'}
                   </div>
-                </td>
-                <td className="px-4 py-3">
-                  <SourceBadge source={p.source} />
                 </td>
                 <td className={`px-4 py-3 ${muted}`}>
                   {p.projectId ? projectsById[p.projectId]?.name || '—' : 'Unassigned'}
@@ -171,7 +133,7 @@ export default function PTDList({ dark, onOpen }) {
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={8} className={`px-4 py-10 text-center text-sm ${muted}`}>
+                <td colSpan={7} className={`px-4 py-10 text-center text-sm ${muted}`}>
                   No PTDs found.
                 </td>
               </tr>
@@ -179,78 +141,6 @@ export default function PTDList({ dark, onOpen }) {
           </tbody>
         </table>
       </div>
-
-      {/* New PTD modal */}
-      {showNew && (
-        <div
-          className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 p-4"
-          onClick={() => setShowNew(false)}
-        >
-          <form
-            onClick={(e) => e.stopPropagation()}
-            onSubmit={submitNew}
-            className={`w-full max-w-lg rounded-2xl border p-5 shadow-xl ${panel}`}
-          >
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className={`text-sm font-semibold ${heading}`}>New PTD</h2>
-              <button
-                type="button"
-                onClick={() => setShowNew(false)}
-                className={`rounded-md p-1.5 cursor-pointer ${dark ? 'hover:bg-zinc-800' : 'hover:bg-zinc-200'}`}
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <label className={`col-span-2 text-xs ${muted}`}>
-                PTD name *
-                <input className={`mt-1 ${inputCls(dark)}`} value={form.name} onChange={set('name')} placeholder="e.g. Billing Module" />
-              </label>
-              <label className={`text-xs ${muted}`}>
-                Reference
-                <input className={`mt-1 ${inputCls(dark)}`} value={form.ref} onChange={set('ref')} placeholder="PTD-1402" />
-              </label>
-              <label className={`text-xs ${muted}`}>
-                Estimated man-hours
-                <input type="number" min="0" className={`mt-1 ${inputCls(dark)}`} value={form.estimatedHours} onChange={set('estimatedHours')} placeholder="80" />
-              </label>
-              <label className={`col-span-2 text-xs ${muted}`}>
-                Project
-                <select className={`mt-1 ${inputCls(dark)}`} value={form.projectId} onChange={set('projectId')}>
-                  <option value="">Unassigned (attach later)</option>
-                  {db.projects.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className={`text-xs ${muted}`}>
-                Received date
-                <input type="date" className={`mt-1 ${inputCls(dark)}`} style={{ colorScheme: dark ? 'dark' : 'light' }} value={form.receivedDate} onChange={set('receivedDate')} />
-              </label>
-              <label className={`text-xs ${muted}`}>
-                Deadline
-                <input type="date" className={`mt-1 ${inputCls(dark)}`} style={{ colorScheme: dark ? 'dark' : 'light' }} value={form.deadline} onChange={set('deadline')} />
-              </label>
-              <label className={`col-span-2 text-xs ${muted}`}>
-                Description
-                <textarea rows={2} className={`mt-1 resize-none ${inputCls(dark)}`} value={form.description} onChange={set('description')} placeholder="What does this PTD require?" />
-              </label>
-            </div>
-
-            <div className="mt-4 flex justify-end gap-2">
-              <button type="button" onClick={() => setShowNew(false)} className={`rounded-lg px-3 py-2 text-sm font-medium cursor-pointer ${dark ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700' : 'bg-zinc-200 text-zinc-700 hover:bg-zinc-300'}`}>
-                Cancel
-              </button>
-              <button type="submit" className="rounded-lg bg-violet-500 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-violet-600 cursor-pointer">
-                Create PTD
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
     </div>
   );
 }

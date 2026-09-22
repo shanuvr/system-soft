@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import PTDList from './PTDList.jsx';
-import PTDDetail from './PTDDetail.jsx';
+import DetailedPtd from './DetailedPtd.jsx';
 
 export default function PTDApp({ dark }) {
   const [selectedPtd, setSelectedPtd] = useState(null);
 
   if (selectedPtd) {
     return (
-      <PTDDetail
+      <DetailedPtd
         key={selectedPtd}
         dark={dark}
         ptdId={selectedPtd}

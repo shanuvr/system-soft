@@ -3,7 +3,6 @@ import {
   WO_STATUS_LABELS,
   PRIORITY_LABELS,
   PRIORITY_STYLES,
-  SOURCE_LABELS,
 } from './ptdMeta.js';
 
 const PTD_STATUS_STYLES = {
@@ -54,22 +53,6 @@ export function PriorityBadge({ priority }) {
       }`}
     >
       {PRIORITY_LABELS[priority] || priority}
-    </span>
-  );
-}
-
-export function SourceBadge({ source }) {
-  const styles = {
-    accounts: 'bg-violet-500/10 text-violet-300',
-    manual: 'bg-zinc-500/10 text-zinc-400',
-  };
-  return (
-    <span
-      className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${
-        styles[source] || styles.manual
-      }`}
-    >
-      {SOURCE_LABELS[source] || source}
     </span>
   );
 }

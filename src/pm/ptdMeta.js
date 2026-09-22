@@ -25,8 +25,3 @@ export const PRIORITY_STYLES = {
   medium: 'bg-amber-500/15 text-amber-400',
   low: 'bg-zinc-500/15 text-zinc-400',
 };
-
-export const SOURCE_LABELS = {
-  accounts: 'Accounts',
-  manual: 'Manual',
-};
