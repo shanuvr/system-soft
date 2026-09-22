@@ -4,7 +4,7 @@ import { createSeed } from './seed';
 
 const DB_KEY = 'system-soft:db';
 const SESSION_KEY = 'system-soft:session';
-const SEED_VERSION = 6;
+const SEED_VERSION = 7;
 
 function readKey(key) {
   try {
@@ -319,6 +319,308 @@ export function AppProvider({ children }) {
     });
   };
 
+  const createSingleWorkOrder = (data) => {
+    const id = uid('wo');
+    const now = new Date().toISOString().slice(0, 10);
+    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const est = Number(data.estimatedHours) || 0;
+
+    const newWo = {
+      id,
+      title: data.title.trim(),
+      description: data.description?.trim() || '',
+      projectId: data.projectId || null,
+      ptdId: data.ptdId || null,
+      assignee: data.assignee || 'u2',
+      priority: data.priority || 'medium',
+      startDate: data.startDate || now,
+      dueDate: data.dueDate || '',
+      estimatedHours: est,
+      actualHours: 0,
+      status: data.status || 'not-started',
+      checklist: (data.checklist || []).map((c) => ({
+        id: uid('c'),
+        title: typeof c === 'string' ? c : c.title,
+        done: !!c.done,
+      })),
+      dependencies: data.dependencies || [],
+      comments: [],
+      reviewHistory: [],
+      files: [],
+    };
+
+    setDb((prev) => {
+      const project = prev.projects.find((p) => p.id === newWo.projectId);
+      return {
+        ...prev,
+        workOrders: [newWo, ...prev.workOrders],
+        ptds: prev.ptds.map((p) =>
+          p.id === newWo.ptdId
+            ? {
+                ...p,
+                allocatedHours: (p.allocatedHours || 0) + est,
+                status: p.status === 'received' || p.status === 'not-started' ? 'in-progress' : p.status,
+              }
+            : p,
+        ),
+        activity: [
+          {
+            id: uid('a'),
+            date: now,
+            time,
+            actor: currentUser?.name || 'Project Manager',
+            projectId: newWo.projectId,
+            text: `created work order "${newWo.title}"${project ? ` in ${project.name}` : ''}`,
+          },
+          ...(prev.activity || []),
+        ],
+      };
+    });
+
+    return id;
+  };
+
+  const toggleWorkOrderChecklist = (workOrderId, checklistItemId) => {
+    setDb((prev) => ({
+      ...prev,
+      workOrders: prev.workOrders.map((w) => {
+        if (w.id !== workOrderId) return w;
+        return {
+          ...w,
+          checklist: (w.checklist || []).map((c) => (c.id === checklistItemId ? { ...c, done: !c.done } : c)),
+        };
+      }),
+    }));
+  };
+
+  const addWorkOrderChecklistItem = (workOrderId, title) => {
+    if (!title?.trim()) return;
+    setDb((prev) => ({
+      ...prev,
+      workOrders: prev.workOrders.map((w) => {
+        if (w.id !== workOrderId) return w;
+        return {
+          ...w,
+          checklist: [...(w.checklist || []), { id: uid('c'), title: title.trim(), done: false }],
+        };
+      }),
+    }));
+  };
+
+  const deleteWorkOrderChecklistItem = (workOrderId, checklistItemId) => {
+    setDb((prev) => ({
+      ...prev,
+      workOrders: prev.workOrders.map((w) => {
+        if (w.id !== workOrderId) return w;
+        return {
+          ...w,
+          checklist: (w.checklist || []).filter((c) => c.id !== checklistItemId),
+        };
+      }),
+    }));
+  };
+
+  const addWorkOrderComment = (workOrderId, text) => {
+    if (!text?.trim()) return;
+    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const newComment = {
+      id: uid('cm'),
+      author: currentUser?.name || 'User',
+      time: `Today, ${time}`,
+      text: text.trim(),
+    };
+
+    setDb((prev) => ({
+      ...prev,
+      workOrders: prev.workOrders.map((w) => {
+        if (w.id !== workOrderId) return w;
+        return {
+          ...w,
+          comments: [...(w.comments || []), newComment],
+        };
+      }),
+    }));
+  };
+
+  const submitWorkOrderForReview = (workOrderId, note = '') => {
+    const today = new Date().toISOString().slice(0, 10);
+    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const reviewEntry = {
+      id: uid('rh'),
+      date: today,
+      reviewer: currentUser?.name || 'Developer',
+      decision: 'submitted',
+      note: note.trim() || 'Submitted for PM review',
+    };
+
+    setDb((prev) => {
+      const target = prev.workOrders.find((w) => w.id === workOrderId);
+      if (!target) return prev;
+      return {
+        ...prev,
+        workOrders: prev.workOrders.map((w) =>
+          w.id === workOrderId
+            ? {
+                ...w,
+                status: 'submitted-review',
+                reviewHistory: [reviewEntry, ...(w.reviewHistory || [])],
+              }
+            : w,
+        ),
+        notifications: [
+          {
+            id: uid('n'),
+            title: `Work order "${target.title}" submitted for review by ${currentUser?.name || 'Developer'}`,
+            read: false,
+          },
+          ...(prev.notifications || []),
+        ],
+        activity: [
+          {
+            id: uid('a'),
+            date: today,
+            time,
+            actor: currentUser?.name || 'Developer',
+            projectId: target.projectId,
+            text: `submitted "${target.title}" for review`,
+          },
+          ...(prev.activity || []),
+        ],
+      };
+    });
+  };
+
+  const reviewWorkOrder = (workOrderId, decision, feedbackNote = '') => {
+    const today = new Date().toISOString().slice(0, 10);
+    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const isApproved = decision === 'approved';
+    const newStatus = isApproved ? 'completed' : 'changes-requested';
+
+    const reviewEntry = {
+      id: uid('rh'),
+      date: today,
+      reviewer: currentUser?.name || 'Project Manager',
+      decision,
+      note: feedbackNote.trim() || (isApproved ? 'Approved by PM' : 'Changes requested by PM'),
+    };
+
+    setDb((prev) => {
+      const target = prev.workOrders.find((w) => w.id === workOrderId);
+      if (!target) return prev;
+      return {
+        ...prev,
+        workOrders: prev.workOrders.map((w) =>
+          w.id === workOrderId
+            ? {
+                ...w,
+                status: newStatus,
+                reviewHistory: [reviewEntry, ...(w.reviewHistory || [])],
+              }
+            : w,
+        ),
+        notifications: [
+          {
+            id: uid('n'),
+            title: isApproved
+              ? `Work order "${target.title}" was approved by PM!`
+              : `Changes requested on "${target.title}": ${feedbackNote}`,
+            read: false,
+          },
+          ...(prev.notifications || []),
+        ],
+        activity: [
+          {
+            id: uid('a'),
+            date: today,
+            time,
+            actor: currentUser?.name || 'Project Manager',
+            projectId: target.projectId,
+            text: `${isApproved ? 'approved' : 'requested changes on'} "${target.title}"`,
+          },
+          ...(prev.activity || []),
+        ],
+      };
+    });
+  };
+
+  const resolveBlocker = (blockerId, resolution = 'Resolved') => {
+    const today = new Date().toISOString().slice(0, 10);
+    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+    setDb((prev) => {
+      const target = prev.blockers.find((b) => b.id === blockerId);
+      if (!target) return prev;
+      return {
+        ...prev,
+        blockers: prev.blockers.map((b) =>
+          b.id === blockerId ? { ...b, status: 'resolved', resolution, resolvedDate: today } : b,
+        ),
+        activity: [
+          {
+            id: uid('a'),
+            date: today,
+            time,
+            actor: currentUser?.name || 'User',
+            projectId: target.projectId,
+            text: `resolved blocker: "${target.description}"`,
+          },
+          ...(prev.activity || []),
+        ],
+      };
+    });
+  };
+
+  const addWorkOrderFile = (workOrderId, fileData) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const newFile = {
+      id: uid('f'),
+      name: fileData.name,
+      size: fileData.size || '500 KB',
+      uploadedBy: currentUser?.name || 'User',
+      date: today,
+    };
+
+    setDb((prev) => ({
+      ...prev,
+      workOrders: prev.workOrders.map((w) => {
+        if (w.id !== workOrderId) return w;
+        return {
+          ...w,
+          files: [...(w.files || []), newFile],
+        };
+      }),
+    }));
+  };
+
+  const requestWorkOrderFile = (workOrderId, requestData) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const target = db.workOrders.find((w) => w.id === workOrderId);
+
+    setDb((prev) => ({
+      ...prev,
+      notifications: [
+        {
+          id: uid('n'),
+          title: `File request: "${requestData.fileName}" requested for "${target?.title || 'Work Order'}"`,
+          read: false,
+        },
+        ...(prev.notifications || []),
+      ],
+      activity: [
+        {
+          id: uid('a'),
+          date: today,
+          time,
+          actor: currentUser?.name || 'User',
+          projectId: target?.projectId,
+          text: `requested file "${requestData.fileName}" for "${target?.title}"`,
+        },
+        ...(prev.activity || []),
+      ],
+    }));
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -329,15 +631,25 @@ export function AppProvider({ children }) {
         resetDb,
         updatePtd,
         createWorkOrders,
+        createSingleWorkOrder,
         updateWorkOrder,
         updateWorkOrderStatus,
         deleteWorkOrder,
+        toggleWorkOrderChecklist,
+        addWorkOrderChecklistItem,
+        deleteWorkOrderChecklistItem,
+        addWorkOrderComment,
+        submitWorkOrderForReview,
+        reviewWorkOrder,
         createProject,
         updateProject,
         deleteProject,
         updateMilestone,
         raiseBlocker,
+        resolveBlocker,
         logHours,
+        addWorkOrderFile,
+        requestWorkOrderFile,
       }}
     >
       {children}

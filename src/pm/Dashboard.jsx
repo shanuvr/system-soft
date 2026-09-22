@@ -49,7 +49,7 @@ function PriorityTag({ priority }) {
 
 export default function PMDashboard({ dark }) {
   const { db } = useApp();
-  const { projects, ptds, workOrders, users, blockers, activity } = db;
+  const { projects, ptds, workOrders, users, activity } = db;
 
   const stats = useMemo(() => {
     const projActive = projects.filter((p) => p.status === 'active');
@@ -71,8 +71,6 @@ export default function PMDashboard({ dark }) {
 
     const planned = workOrders.reduce((s, w) => s + (w.estimatedHours || 0), 0);
     const actual = workOrders.reduce((s, w) => s + (w.actualHours || 0), 0);
-
-    const activeBlockers = blockers.filter((b) => b.status === 'open');
 
     const projectProgress = projects.map((p) => {
       const pts = ptds.filter((t) => t.projectId === p.id);
@@ -108,11 +106,10 @@ export default function PMDashboard({ dark }) {
       planned,
       actual,
       remaining: Math.max(0, planned - actual),
-      activeBlockers,
       projectProgress,
       workload,
     };
-  }, [projects, ptds, workOrders, users, blockers]);
+  }, [projects, ptds, workOrders, users]);
 
   const todayISO = new Date().toISOString().slice(0, 10);
   const todaysActivity = activity.filter((a) => a.date === todayISO).slice(0, 6);
@@ -155,10 +152,10 @@ export default function PMDashboard({ dark }) {
         />
         <StatCard
           dark={dark}
-          label="Active Blockers"
+          label="Deadlines & Alerts"
           icon={AlertTriangle}
-          value={stats.activeBlockers.length}
-          sub={`${stats.nearingDeadline.length} nearing deadline · ${stats.delayedProjects.length} delayed`}
+          value={stats.overdue.length + stats.delayedProjects.length}
+          sub={`${stats.nearingDeadline.length} nearing deadline · ${stats.delayedProjects.length} delayed projects`}
         />
       </div>
 
@@ -222,7 +219,7 @@ export default function PMDashboard({ dark }) {
         </section>
       </div>
 
-      {/* Project progress / active blockers */}
+      {/* Project progress / urgent work orders */}
       <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
         <section className={`rounded-2xl border p-5 ${panel}`}>
           <div className="mb-4 flex items-center justify-between">
@@ -245,25 +242,26 @@ export default function PMDashboard({ dark }) {
         <section className={`rounded-2xl border p-5 ${panel}`}>
           <div className="mb-4 flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-violet-500" />
-            <h2 className={`text-sm font-semibold ${heading}`}>Active Blockers</h2>
+            <h2 className={`text-sm font-semibold ${heading}`}>Urgent & Overdue Work Orders</h2>
           </div>
           <ul className="space-y-3">
-            {stats.activeBlockers.map((b) => {
-              const project = projects.find((p) => p.id === b.projectId);
+            {stats.overdue.map((w) => {
+              const project = projects.find((p) => p.id === w.projectId);
               return (
-                <li key={b.id} className={`rounded-xl border p-3 text-sm ${border}`}>
+                <li key={w.id} className={`rounded-xl border p-3 text-sm ${border}`}>
                   <div className="flex items-center justify-between gap-2">
-                    <span className={`font-medium ${heading}`}>{b.description}</span>
-                    <PriorityTag priority={b.priority} />
+                    <span className={`font-medium ${heading}`}>{w.title}</span>
+                    <PriorityTag priority={w.priority} />
                   </div>
-                  <div className={`mt-1 text-xs ${muted}`}>
-                    {project?.name} · {b.workOrderId}
+                  <div className={`mt-1 flex items-center justify-between text-xs ${muted}`}>
+                    <span>{project?.name || 'Project'}</span>
+                    <span className="text-red-400 font-semibold tabular-nums">Due: {w.dueDate}</span>
                   </div>
                 </li>
               );
             })}
-            {stats.activeBlockers.length === 0 && (
-              <li className={`text-xs ${muted}`}>No active blockers.</li>
+            {stats.overdue.length === 0 && (
+              <li className={`text-xs ${muted}`}>No overdue work orders.</li>
             )}
           </ul>
         </section>

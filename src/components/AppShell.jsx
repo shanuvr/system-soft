@@ -8,6 +8,7 @@ import { useApp } from '../data/context.js';
 import PMDashboard from '../pm/Dashboard.jsx';
 import PTDApp from '../pm/PTDApp.jsx';
 import Projects from '../pm/Projects.jsx';
+import WorkOrders from '../workorders/WorkOrders.jsx';
 import Placeholder from '../views/Placeholder.jsx';
 
 const HOME = '/app/dashboard';
@@ -78,7 +79,7 @@ export default function AppShell({ initialApp = 'dashboard' }) {
   const unread = (db.notifications || []).filter((n) => !n.read).length;
 
   const renderView = () => {
-    if (activeApp === 'dashboard' && role !== 'dev') {
+    if (activeApp === 'dashboard') {
       return <PMDashboard dark={dark} />;
     }
     if (activeApp === 'ptds' && role !== 'dev') {
@@ -86,6 +87,9 @@ export default function AppShell({ initialApp = 'dashboard' }) {
     }
     if (activeApp === 'projects' && role !== 'dev') {
       return <Projects key={navCount} dark={dark} />;
+    }
+    if (activeApp === 'workorders') {
+      return <WorkOrders key={navCount} dark={dark} />;
     }
     return <Placeholder title={active.name} icon={active.icon} dark={dark} key={active.id} />;
   };
