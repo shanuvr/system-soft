@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, MoreVertical, Pencil, Plus, Save, Trash2, X } from 'lucide-react';
 import { useApp } from '../data/context.js';
 import { PtdStatusBadge, PriorityBadge, WoStatusBadge } from './badges.jsx';
@@ -40,7 +40,7 @@ export default function DetailedPtd({ dark, ptdId, onBack }) {
   const [showEditor, setShowEditor] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
-  const [menuUp, setMenuUp] = useState(false);
+  const [menuPos, setMenuPos] = useState(null);
   const [rows, setRows] = useState(() => [emptyRow(db.users.filter((u) => u.role === 'dev'))]);
 
   const panel = dark ? 'border-zinc-800 bg-zinc-900/70' : 'border-zinc-200 bg-white/80';
@@ -75,15 +75,40 @@ export default function DetailedPtd({ dark, ptdId, onBack }) {
   const updateRow = (i, patch) =>
     setRows((prev) => prev.map((r, j) => (j === i ? { ...r, ...patch } : r)));
 
-const toggleMenu = (id, evt) => {
+  const toggleMenu = (id, evt) => {
     if (openMenuId === id) {
       setOpenMenuId(null);
+      setMenuPos(null);
       return;
     }
     const rect = evt.currentTarget.getBoundingClientRect();
-    setMenuUp(window.innerHeight - rect.bottom < 140);
+    const menuHeight = 85;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const showAbove = spaceBelow < menuHeight && rect.top > menuHeight;
+
+    setMenuPos({
+      top: showAbove ? rect.top - menuHeight : rect.bottom + 4,
+      right: window.innerWidth - rect.right,
+    });
     setOpenMenuId(id);
   };
+
+  useEffect(() => {
+    const handleScrollOrResize = () => {
+      if (openMenuId) {
+        setOpenMenuId(null);
+        setMenuPos(null);
+      }
+    };
+    if (openMenuId) {
+      window.addEventListener('scroll', handleScrollOrResize, true);
+      window.addEventListener('resize', handleScrollOrResize);
+    }
+    return () => {
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      window.removeEventListener('resize', handleScrollOrResize);
+    };
+  }, [openMenuId]);
 
   const openCreate = () => {
     setEditingId(null);
@@ -133,7 +158,13 @@ const toggleMenu = (id, evt) => {
   return (
     <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6">
       {openMenuId && (
-        <div className="fixed inset-0 z-20 cursor-default" onClick={() => setOpenMenuId(null)} />
+        <div
+          className="fixed inset-0 z-40 cursor-default"
+          onClick={() => {
+            setOpenMenuId(null);
+            setMenuPos(null);
+          }}
+        />
       )}
       <button
         onClick={onBack}
@@ -221,6 +252,7 @@ const toggleMenu = (id, evt) => {
                   <th className="px-5 py-2.5 font-medium">Assignee</th>
                   <th className="px-5 py-2.5 font-medium">Est</th>
                   <th className="px-5 py-2.5 font-medium">Actual</th>
+                  <th className="px-5 py-2.5 font-medium">Progress</th>
                   <th className="px-5 py-2.5 font-medium">Priority</th>
                   <th className="px-5 py-2.5 font-medium">Due</th>
                   <th className="px-5 py-2.5 font-medium">Status</th>
@@ -240,6 +272,17 @@ const toggleMenu = (id, evt) => {
                     <td className={`px-5 py-3 font-semibold tabular-nums ${heading}`}>{w.estimatedHours}h</td>
                     <td className={`px-5 py-3 font-semibold tabular-nums ${heading}`}>{w.actualHours}h</td>
                     <td className="px-5 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className={`h-1.5 w-16 overflow-hidden rounded-full ${dark ? 'bg-zinc-800' : 'bg-zinc-200'}`}>
+                          <div
+                            className="h-full rounded-full bg-violet-500"
+                            style={{ width: `${Math.min(100, Math.max(0, w.progress ?? 0))}%` }}
+                          />
+                        </div>
+                        <span className={`text-xs font-medium tabular-nums ${heading}`}>{w.progress ?? 0}%</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3">
                       <PriorityBadge priority={w.priority} />
                     </td>
                     <td className={`px-5 py-3 text-xs tabular-nums ${muted}`}>{w.dueDate || '—'}</td>
@@ -256,11 +299,14 @@ const toggleMenu = (id, evt) => {
                         >
                           <MoreVertical className="h-4 w-4" />
                         </button>
-                        {openMenuId === w.id && (
+                        {openMenuId === w.id && menuPos && (
                           <div
-                            className={`absolute ${
-                              menuUp ? 'bottom-full mb-1' : 'top-full mt-1'
-                            } right-0 z-30 w-36 overflow-hidden rounded-lg border py-1 shadow-lg ${
+                            style={{
+                              position: 'fixed',
+                              top: `${menuPos.top}px`,
+                              right: `${menuPos.right}px`,
+                            }}
+                            className={`z-50 w-36 overflow-hidden rounded-lg border py-1 shadow-lg ${
                               dark
                                 ? 'border-zinc-700 bg-zinc-900 shadow-black/50'
                                 : 'border-zinc-200 bg-white shadow-zinc-400/30'
@@ -269,6 +315,7 @@ const toggleMenu = (id, evt) => {
                             <button
                               onClick={() => {
                                 setOpenMenuId(null);
+                                setMenuPos(null);
                                 openEdit(w);
                               }}
                               className={`flex w-full items-center gap-2 px-3 py-2 text-xs cursor-pointer ${
@@ -282,6 +329,7 @@ const toggleMenu = (id, evt) => {
                             <button
                               onClick={() => {
                                 setOpenMenuId(null);
+                                setMenuPos(null);
                                 deleteWorkOrder(w.id);
                               }}
                               className="flex w-full items-center gap-2 px-3 py-2 text-xs text-red-500 hover:bg-red-500/10 cursor-pointer"

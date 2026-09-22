@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   Clock,
-  CheckCircle2,
   AlertTriangle,
   ChevronRight,
   ChevronDown,
@@ -120,7 +119,7 @@ export default function WorkOrderTable({
                 </div>
               </th>
               <th className="px-4 py-3.5">Hours (Used / Est)</th>
-              <th className="px-4 py-3.5">Checklist</th>
+              <th className="px-4 py-3.5">Work Progress</th>
               <th className="py-3.5 pl-4 pr-5 text-right">Actions</th>
             </tr>
           </thead>
@@ -134,9 +133,14 @@ export default function WorkOrderTable({
               const isOverdue =
                 wo.status !== 'completed' && daysLeft !== null && daysLeft < 0;
 
-              const checklist = wo.checklist || [];
-              const checklistDone = checklist.filter((c) => c.done).length;
-              const checklistTotal = checklist.length;
+              const progressPct =
+                wo.status === 'completed' || wo.status === 'done'
+                  ? 100
+                  : typeof wo.progress === 'number'
+                  ? wo.progress
+                  : wo.estimatedHours > 0
+                  ? Math.min(100, Math.round(((wo.actualHours || 0) / wo.estimatedHours) * 100))
+                  : 0;
 
               const hoursPct =
                 wo.estimatedHours > 0
@@ -272,22 +276,30 @@ export default function WorkOrderTable({
                     </div>
                   </td>
 
-                  {/* Checklist */}
+                  {/* Work Progress */}
                   <td className="px-4 py-3 whitespace-nowrap">
-                    {checklistTotal > 0 ? (
+                    <div className="w-24">
+                      <div className="mb-1 flex items-center justify-between text-[11px] tabular-nums">
+                        <span className={`text-[10px] font-medium ${mutedText}`}>Done</span>
+                        <span className="font-bold text-xs">{progressPct}%</span>
+                      </div>
                       <div
-                        className={`flex items-center gap-1.5 text-xs font-medium tabular-nums ${
-                          checklistDone === checklistTotal ? 'text-emerald-400 font-semibold' : mutedText
+                        className={`h-1.5 w-full overflow-hidden rounded-full ${
+                          dark ? 'bg-zinc-800' : 'bg-zinc-200'
                         }`}
                       >
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        <span>
-                          {checklistDone} / {checklistTotal} done
-                        </span>
+                        <div
+                          className={`h-full rounded-full transition-all ${
+                            progressPct >= 100
+                              ? 'bg-emerald-500'
+                              : progressPct >= 50
+                              ? 'bg-violet-500'
+                              : 'bg-amber-500'
+                          }`}
+                          style={{ width: `${progressPct}%` }}
+                        />
                       </div>
-                    ) : (
-                      <span className={`text-xs ${mutedText}`}>None</span>
-                    )}
+                    </div>
                   </td>
 
                   {/* Quick Action buttons */}

@@ -176,7 +176,7 @@ export default function AppShell({ initialApp = 'dashboard' }) {
       <main className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden min-w-0">{renderView()}</main>
 
       {/* Bottom dock */}
-      <div className="flex w-full max-w-full min-w-0 items-end justify-center px-2 pb-3 shrink-0">
+      <div className="flex w-full max-w-full min-w-0 items-end justify-center px-2 pb-2 pt-0.5 shrink-0">
         <RoleDock
           activeApp={activeApp}
           showApps={showApps}

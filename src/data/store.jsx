@@ -4,7 +4,7 @@ import { createSeed } from './seed';
 
 const DB_KEY = 'system-soft:db';
 const SESSION_KEY = 'system-soft:session';
-const SEED_VERSION = 7;
+const SEED_VERSION = 12;
 
 function readKey(key) {
   try {
@@ -27,6 +27,22 @@ function uid(prefix) {
   return `${prefix}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 }
 
+let _woCounter = 0;
+function nextWoId(existingWorkOrders) {
+  if (_woCounter === 0 && existingWorkOrders?.length) {
+    const nums = existingWorkOrders
+      .map((w) => {
+        const m = w.id.match(/WORK-(\d+)/i);
+        return m ? parseInt(m[1], 10) : 0;
+      })
+      .filter(Boolean);
+    _woCounter = nums.length ? Math.max(...nums) : 1000;
+  }
+  if (_woCounter === 0) _woCounter = 1000;
+  _woCounter++;
+  return `WORK-${_woCounter}`;
+}
+
 function loadDb() {
   const persisted = readKey(DB_KEY);
   if (persisted && persisted._seedVersion === SEED_VERSION) return persisted;
@@ -42,9 +58,11 @@ export function AppProvider({ children }) {
   const [db, setDb] = useState(loadDb);
   const [currentUser, setCurrentUser] = useState(() => readKey(SESSION_KEY));
 
+  // Persist db to localStorage whenever it changes
   useEffect(() => {
     writeKey(DB_KEY, db);
   }, [db]);
+
 
   const login = (username, password) => {
     const user = db.users.find(
@@ -78,7 +96,7 @@ export function AppProvider({ children }) {
     const now = new Date().toISOString().slice(0, 10);
     const projectId = db.ptds.find((p) => p.id === ptdId)?.projectId || null;
     const newWorkOrders = clean.map((r) => ({
-      id: uid('wo'),
+      id: nextWoId(db.workOrders),
       title: r.title.trim(),
       description: r.description?.trim() || '',
       projectId,
@@ -89,22 +107,36 @@ export function AppProvider({ children }) {
       dueDate: r.dueDate || '',
       estimatedHours: Number(r.estimatedHours) || 0,
       actualHours: 0,
+      progress: 0,
       status: 'not-started',
+      dependencies: [],
+      comments: [],
+      reviewHistory: [],
+      files: [],
     }));
     const totalHours = newWorkOrders.reduce((s, w) => s + w.estimatedHours, 0);
-    setDb((prev) => ({
-      ...prev,
-      workOrders: [...prev.workOrders, ...newWorkOrders],
-      ptds: prev.ptds.map((p) =>
-        p.id === ptdId
-          ? {
-              ...p,
-              allocatedHours: (p.allocatedHours || 0) + totalHours,
-              status: p.status === 'received' || p.status === 'not-started' ? 'in-progress' : p.status,
-            }
-          : p,
-      ),
-    }));
+    setDb((prev) => {
+      const allWos = [...prev.workOrders, ...newWorkOrders];
+      const ptdWos = allWos.filter((w) => w.ptdId === ptdId);
+      const calcProgress = ptdWos.length
+        ? Math.round(ptdWos.reduce((s, w) => s + (Number(w.progress) || 0), 0) / ptdWos.length)
+        : 0;
+
+      return {
+        ...prev,
+        workOrders: allWos,
+        ptds: prev.ptds.map((p) =>
+          p.id === ptdId
+            ? {
+                ...p,
+                allocatedHours: (p.allocatedHours || 0) + totalHours,
+                progress: calcProgress,
+                status: p.status === 'received' || p.status === 'not-started' ? 'in-progress' : p.status,
+              }
+            : p,
+        ),
+      };
+    });
     return newWorkOrders.length;
   };
 
@@ -114,9 +146,27 @@ export function AppProvider({ children }) {
       if (!target) return prev;
       const today = new Date().toISOString().slice(0, 10);
       const project = prev.projects.find((p) => p.id === target.projectId);
+      const autoProgress = status === 'completed' || status === 'done' ? 100 : target.progress;
+
+      const workOrders = prev.workOrders.map((w) =>
+        w.id === id ? { ...w, status, progress: autoProgress } : w,
+      );
+      const ptdWos = workOrders.filter((w) => w.ptdId === target.ptdId);
+      const calcProgress = ptdWos.length
+        ? Math.round(ptdWos.reduce((s, w) => s + (Number(w.progress) || 0), 0) / ptdWos.length)
+        : 0;
+
       return {
         ...prev,
-        workOrders: prev.workOrders.map((w) => (w.id === id ? { ...w, status } : w)),
+        workOrders,
+        ptds: prev.ptds.map((p) =>
+          p.id === target.ptdId
+            ? {
+                ...p,
+                progress: calcProgress,
+              }
+            : p,
+        ),
         activity: [
           {
             id: uid('a'),
@@ -140,6 +190,10 @@ export function AppProvider({ children }) {
       if (!target) return prev;
       const workOrders = prev.workOrders.map((w) => (w.id === id ? { ...w, ...patch } : w));
       const ptdWos = workOrders.filter((w) => w.ptdId === target.ptdId);
+      const calcProgress = ptdWos.length
+        ? Math.round(ptdWos.reduce((s, w) => s + (Number(w.progress) || 0), 0) / ptdWos.length)
+        : 0;
+
       return {
         ...prev,
         workOrders,
@@ -149,6 +203,7 @@ export function AppProvider({ children }) {
                 ...p,
                 allocatedHours: ptdWos.reduce((s, w) => s + (w.estimatedHours || 0), 0),
                 usedHours: ptdWos.reduce((s, w) => s + (w.actualHours || 0), 0),
+                progress: calcProgress,
               }
             : p,
         ),
@@ -161,6 +216,10 @@ export function AppProvider({ children }) {
       const target = prev.workOrders.find((w) => w.id === id);
       if (!target) return prev;
       const ptdWos = prev.workOrders.filter((w) => w.ptdId === target.ptdId && w.id !== id);
+      const calcProgress = ptdWos.length
+        ? Math.round(ptdWos.reduce((s, w) => s + (Number(w.progress) || 0), 0) / ptdWos.length)
+        : 0;
+
       return {
         ...prev,
         workOrders: prev.workOrders.filter((w) => w.id !== id),
@@ -170,6 +229,7 @@ export function AppProvider({ children }) {
                 ...p,
                 allocatedHours: ptdWos.reduce((s, w) => s + (w.estimatedHours || 0), 0),
                 usedHours: ptdWos.reduce((s, w) => s + (w.actualHours || 0), 0),
+                progress: calcProgress,
                 status: ptdWos.length === 0 && p.status === 'in-progress' ? 'not-started' : p.status,
               }
             : p,
@@ -320,7 +380,7 @@ export function AppProvider({ children }) {
   };
 
   const createSingleWorkOrder = (data) => {
-    const id = uid('wo');
+    const id = nextWoId(db.workOrders);
     const now = new Date().toISOString().slice(0, 10);
     const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
     const est = Number(data.estimatedHours) || 0;
@@ -337,12 +397,8 @@ export function AppProvider({ children }) {
       dueDate: data.dueDate || '',
       estimatedHours: est,
       actualHours: 0,
+      progress: Number(data.progress) || 0,
       status: data.status || 'not-started',
-      checklist: (data.checklist || []).map((c) => ({
-        id: uid('c'),
-        title: typeof c === 'string' ? c : c.title,
-        done: !!c.done,
-      })),
       dependencies: data.dependencies || [],
       comments: [],
       reviewHistory: [],
@@ -351,14 +407,21 @@ export function AppProvider({ children }) {
 
     setDb((prev) => {
       const project = prev.projects.find((p) => p.id === newWo.projectId);
+      const allWos = [newWo, ...prev.workOrders];
+      const ptdWos = allWos.filter((w) => w.ptdId === newWo.ptdId);
+      const calcProgress = ptdWos.length
+        ? Math.round(ptdWos.reduce((s, w) => s + (Number(w.progress) || 0), 0) / ptdWos.length)
+        : 0;
+
       return {
         ...prev,
-        workOrders: [newWo, ...prev.workOrders],
+        workOrders: allWos,
         ptds: prev.ptds.map((p) =>
           p.id === newWo.ptdId
             ? {
                 ...p,
                 allocatedHours: (p.allocatedHours || 0) + est,
+                progress: calcProgress,
                 status: p.status === 'received' || p.status === 'not-started' ? 'in-progress' : p.status,
               }
             : p,

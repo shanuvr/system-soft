@@ -3,7 +3,6 @@ import {
   Search,
   ChevronRight,
   Plus,
-  Clock,
   AlertTriangle,
   X,
 } from 'lucide-react';
@@ -27,7 +26,7 @@ function daysUntil(iso) {
 }
 
 export default function WorkOrders({ dark }) {
-  const { db, logHours } = useApp();
+  const { db } = useApp();
   const { workOrders = [], projects = [], ptds = [], users = [], blockers = [] } = db;
 
   const [query, setQuery] = useState('');
@@ -38,11 +37,6 @@ export default function WorkOrders({ dark }) {
   // Selected work order for 360 detail drawer
   const [selectedWoId, setSelectedWoId] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-
-  // Quick log hours modal
-  const [quickLogWo, setQuickLogWo] = useState(null);
-  const [quickLogHours, setQuickLogHours] = useState('');
-  const [quickLogNote, setQuickLogNote] = useState('');
 
   const projectsById = useMemo(
     () => Object.fromEntries(projects.map((p) => [p.id, p])),
@@ -110,17 +104,6 @@ export default function WorkOrders({ dark }) {
   const inputBg = dark
     ? 'border-zinc-700 bg-zinc-900 text-white placeholder-zinc-500 focus:border-violet-500'
     : 'border-zinc-300 bg-white text-zinc-800 placeholder-zinc-400 focus:border-violet-500';
-
-  const handleExecuteQuickLog = (e) => {
-    e.preventDefault();
-    if (!quickLogWo) return;
-    const hrs = Number(quickLogHours);
-    if (!hrs || hrs <= 0) return;
-    logHours(quickLogWo.id, hrs, quickLogNote);
-    setQuickLogWo(null);
-    setQuickLogHours('');
-    setQuickLogNote('');
-  };
 
   return (
     <div className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6">
@@ -262,12 +245,12 @@ export default function WorkOrders({ dark }) {
         <table className="w-full min-w-[800px] text-left text-sm">
           <thead>
             <tr className={`border-b text-xs uppercase tracking-wider ${muted}`}>
-              <th className="px-5 py-3.5 font-semibold">Work Order / PTD</th>
+              <th className="px-5 py-3.5 font-semibold">Work Order</th>
               <th className="px-4 py-3.5 font-semibold">Project</th>
               <th className="px-4 py-3.5 font-semibold">Developer</th>
               <th className="px-4 py-3.5 font-semibold">Priority</th>
               <th className="px-4 py-3.5 font-semibold">Status</th>
-              <th className="px-4 py-3.5 font-semibold">Progress & Checklist</th>
+              <th className="px-4 py-3.5 font-semibold">Work Progress</th>
               <th className="px-4 py-3.5 font-semibold">Hours (Used / Est)</th>
               <th className="px-4 py-3.5 font-semibold">Due Date</th>
               <th className="w-16 px-3 py-3.5 text-right font-semibold">Actions</th>
@@ -276,24 +259,16 @@ export default function WorkOrders({ dark }) {
           <tbody className="divide-y divide-zinc-800/40 dark:divide-zinc-800/60">
             {filtered.map((wo) => {
               const project = projectsById[wo.projectId];
-              const ptd = ptdsById[wo.ptdId];
               const assignee = usersById[wo.assignee];
               const activeBlocker = activeBlockersByWo[wo.id];
               const daysLeft = daysUntil(wo.dueDate);
               const isOverdue = wo.status !== 'completed' && daysLeft !== null && daysLeft < 0;
 
-              const checklist = wo.checklist || [];
-              const checklistDone = checklist.filter((c) => c.done).length;
-              const checklistTotal = checklist.length;
-              const checklistPct = checklistTotal ? Math.round((checklistDone / checklistTotal) * 100) : 0;
-
-              // Progress metric calculation:
-              // If completed -> 100%, otherwise if checklist exists -> checklist %, otherwise actual vs estimated %
               const progressPct =
-                wo.status === 'completed'
+                wo.status === 'completed' || wo.status === 'done'
                   ? 100
-                  : checklistTotal > 0
-                  ? checklistPct
+                  : typeof wo.progress === 'number'
+                  ? wo.progress
                   : wo.estimatedHours > 0
                   ? Math.min(100, Math.round(((wo.actualHours || 0) / wo.estimatedHours) * 100))
                   : 0;
@@ -306,11 +281,14 @@ export default function WorkOrders({ dark }) {
                     activeBlocker ? 'bg-red-500/5' : ''
                   }`}
                 >
-                  {/* Work Order Title, PTD tag & Blocker indicator */}
+                  {/* Work Order ID, Title & Blocker indicator */}
                   <td className="px-5 py-3.5">
                     <div className="flex items-start gap-2">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-bold text-violet-500 uppercase">
+                            {wo.id}
+                          </span>
                           <span className={`font-semibold text-sm ${heading} hover:text-violet-400 transition-colors`}>
                             {wo.title}
                           </span>
@@ -324,20 +302,11 @@ export default function WorkOrders({ dark }) {
                             </span>
                           )}
                         </div>
-                        <div className="mt-0.5 flex items-center gap-2 text-xs">
-                          {ptd && (
-                            <span
-                              className={`rounded px-1.5 py-0.2 text-[10px] font-semibold ${
-                                dark ? 'bg-zinc-800 text-zinc-300' : 'bg-zinc-100 text-zinc-700'
-                              }`}
-                            >
-                              {ptd.ref || ptd.name}
-                            </span>
-                          )}
-                          <span className={`truncate text-xs ${muted} max-w-[240px]`}>
-                            {wo.description || '—'}
-                          </span>
-                        </div>
+                        {wo.description && (
+                          <div className={`mt-0.5 truncate text-xs ${muted} max-w-[280px]`}>
+                            {wo.description}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </td>
@@ -373,13 +342,11 @@ export default function WorkOrders({ dark }) {
                     <WoStatusBadge status={wo.status} />
                   </td>
 
-                  {/* Progress & Checklist Bar */}
+                  {/* Work Progress Bar */}
                   <td className="px-4 py-3.5 whitespace-nowrap">
                     <div className="w-32">
                       <div className="mb-1 flex items-center justify-between text-[11px] tabular-nums">
-                        <span className={`text-[10px] font-medium ${muted}`}>
-                          {checklistTotal > 0 ? `${checklistDone}/${checklistTotal} items` : `${progressPct}%`}
-                        </span>
+                        <span className={`text-[10px] font-medium ${muted}`}>Progress</span>
                         <span className="font-bold text-xs">{progressPct}%</span>
                       </div>
                       <div
@@ -430,17 +397,6 @@ export default function WorkOrders({ dark }) {
                   <td className="px-3 py-3.5 text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                       <button
-                        onClick={() => setQuickLogWo(wo)}
-                        title="Quick Log Hours"
-                        className={`rounded-lg p-1.5 transition-colors cursor-pointer ${
-                          dark
-                            ? 'hover:bg-zinc-800 text-zinc-400 hover:text-violet-400'
-                            : 'hover:bg-zinc-200 text-zinc-500 hover:text-violet-600'
-                        }`}
-                      >
-                        <Clock className="h-4 w-4" />
-                      </button>
-                      <button
                         onClick={() => setSelectedWoId(wo.id)}
                         title="View Full Details"
                         className={`rounded-lg p-1.5 transition-colors cursor-pointer ${
@@ -481,76 +437,6 @@ export default function WorkOrders({ dark }) {
           dark={dark}
           onClose={() => setShowCreateModal(false)}
         />
-      )}
-
-      {/* QUICK LOG HOURS MODAL */}
-      {quickLogWo && (
-        <div
-          className="fixed inset-0 z-60 flex items-center justify-center bg-black/70 p-4"
-          onClick={() => setQuickLogWo(null)}
-        >
-          <div
-            className={`w-full max-w-sm rounded-2xl border p-6 shadow-2xl backdrop-blur-xl ${
-              dark ? 'bg-zinc-900 text-zinc-100 border-zinc-800' : 'bg-white text-zinc-800 border-zinc-200'
-            }`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <Clock className="h-5 w-5 text-violet-500" />
-              <h3 className={`text-base font-bold ${heading}`}>Log Time</h3>
-            </div>
-            <p className={`text-xs ${muted} line-clamp-1 mb-4`}>
-              {quickLogWo.title}
-            </p>
-
-            <form onSubmit={handleExecuteQuickLog} className="space-y-3">
-              <div>
-                <label className={`block text-xs font-semibold mb-1 ${heading}`}>Hours Worked</label>
-                <input
-                  type="number"
-                  step="0.5"
-                  min="0.5"
-                  max="24"
-                  autoFocus
-                  required
-                  value={quickLogHours}
-                  onChange={(e) => setQuickLogHours(e.target.value)}
-                  placeholder="e.g. 2.5"
-                  className={`w-full rounded-xl border px-3 py-2 text-xs outline-none ${inputBg}`}
-                />
-              </div>
-
-              <div>
-                <label className={`block text-xs font-semibold mb-1 ${heading}`}>Note (Optional)</label>
-                <input
-                  type="text"
-                  value={quickLogNote}
-                  onChange={(e) => setQuickLogNote(e.target.value)}
-                  placeholder="e.g. Unit tests and code clean up..."
-                  className={`w-full rounded-xl border px-3 py-2 text-xs outline-none ${inputBg}`}
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setQuickLogWo(null)}
-                  className={`rounded-xl px-4 py-2 text-xs font-semibold cursor-pointer ${
-                    dark ? 'hover:bg-zinc-800' : 'hover:bg-zinc-200'
-                  }`}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="rounded-xl bg-violet-600 px-4 py-2 text-xs font-semibold text-white transition-all cursor-pointer hover:bg-violet-500"
-                >
-                  Save Time Log
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
       )}
     </div>
   );

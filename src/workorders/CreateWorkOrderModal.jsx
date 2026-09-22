@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Trash2, ListTodo } from 'lucide-react';
+import { X, ListTodo } from 'lucide-react';
 import { useApp } from '../data/context.js';
 
 export default function CreateWorkOrderModal({ dark, onClose, initialProjectId, initialPtdId }) {
@@ -13,18 +13,13 @@ export default function CreateWorkOrderModal({ dark, onClose, initialProjectId, 
   const [description, setDescription] = useState('');
   const [assignee, setAssignee] = useState(db.users.find((u) => u.role === 'dev')?.id || 'u2');
   const [priority, setPriority] = useState('medium');
-  const [estimatedHours, setEstimatedHours] = useState('16');
+  const [estimatedHours, setEstimatedHours] = useState('');
   const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [dueDate, setDueDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 7);
     return d.toISOString().slice(0, 10);
   });
-  const [checklistItems, setChecklistItems] = useState([
-    'Setup initial environment & requirements',
-    'Core implementation and unit test coverage',
-  ]);
-  const [newTaskInput, setNewTaskInput] = useState('');
 
   const borderCls = dark ? 'border-zinc-800' : 'border-zinc-200';
   const bgPanel = dark ? 'bg-zinc-900 text-zinc-100' : 'bg-white text-zinc-800';
@@ -41,17 +36,6 @@ export default function CreateWorkOrderModal({ dark, onClose, initialProjectId, 
     setPtdId(relatedPtds[0]?.id || '');
   };
 
-  const handleAddTask = (e) => {
-    e.preventDefault();
-    if (!newTaskInput.trim()) return;
-    setChecklistItems([...checklistItems, newTaskInput.trim()]);
-    setNewTaskInput('');
-  };
-
-  const handleRemoveTask = (idx) => {
-    setChecklistItems(checklistItems.filter((_, i) => i !== idx));
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim()) return;
@@ -66,7 +50,7 @@ export default function CreateWorkOrderModal({ dark, onClose, initialProjectId, 
       startDate,
       dueDate,
       estimatedHours: Number(estimatedHours) || 0,
-      checklist: checklistItems.map((t) => ({ title: t, done: false })),
+      progress: 0,
     });
 
     onClose();
@@ -228,49 +212,6 @@ export default function CreateWorkOrderModal({ dark, onClose, initialProjectId, 
                 onChange={(e) => setDueDate(e.target.value)}
                 className={`w-full rounded-xl border px-3.5 py-2.5 text-xs outline-none ${inputBg}`}
               />
-            </div>
-          </div>
-
-          {/* Initial Checklist Tasks */}
-          <div className={`rounded-2xl border p-4 ${borderCls}`}>
-            <label className={`block text-xs font-bold uppercase tracking-wider mb-2 ${mutedText}`}>
-              Execution Checklist
-            </label>
-
-            <div className="space-y-2 mb-3">
-              {checklistItems.map((item, idx) => (
-                <div
-                  key={idx}
-                  className={`flex items-center justify-between rounded-xl border p-2.5 text-xs ${borderCls}`}
-                >
-                  <span className={`font-medium ${headingText}`}>{item}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveTask(idx)}
-                    className="text-zinc-400 hover:text-red-400 p-1 cursor-pointer"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex gap-2">
-              <input
-                value={newTaskInput}
-                onChange={(e) => setNewTaskInput(e.target.value)}
-                placeholder="Add checklist item..."
-                className={`flex-1 rounded-xl border px-3 py-1.5 text-xs outline-none ${inputBg}`}
-              />
-              <button
-                type="button"
-                onClick={handleAddTask}
-                className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
-                  dark ? 'bg-zinc-800 hover:bg-zinc-700' : 'bg-zinc-200 hover:bg-zinc-300'
-                }`}
-              >
-                + Add Item
-              </button>
             </div>
           </div>
 

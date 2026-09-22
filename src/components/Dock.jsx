@@ -102,7 +102,7 @@ export default function Dock({
     : ['from-white via-white/80 to-transparent', 'to-white via-white/80 from-transparent'];
 
   return (
-    <div className="relative flex max-w-[calc(100vw-1rem)] sm:max-w-full min-w-0 items-center justify-center pt-8 overflow-visible">
+    <div className="relative flex max-w-[calc(100vw-1rem)] sm:max-w-full min-w-0 items-center justify-center pt-1 pb-1 overflow-visible">
       {/* Scroll Left Button & Gradient (Mobile only) */}
       {edge.left && (
         <button
