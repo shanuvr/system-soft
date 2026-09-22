@@ -191,8 +191,8 @@ export default function Projects({ dark }) {
   const selected = selectedProject ? projects.find((p) => p.id === selectedProject) : null;
 
   const memberStack = (members, dark, extraClass = '') => (
-    <div className={`relative ${extraClass}`}>
-      <div className="group flex items-center">
+    <div className={`group relative ${extraClass}`}>
+      <div className="flex items-center">
         {members.length > 0 ? (
           <div className="flex -space-x-1.5">
             {members.slice(0, 4).map((m) => (
@@ -572,7 +572,7 @@ export default function Projects({ dark }) {
             <button
               key={p.id}
               onClick={() => setSelectedProject(p.id)}
-              className={`group relative flex flex-col rounded-2xl border p-5 text-left transition-all cursor-pointer hover:-translate-y-0.5 hover:border-violet-500/40 hover:shadow-lg hover:shadow-violet-500/5 ${panel}`}
+              className={`relative flex flex-col rounded-2xl border p-5 text-left transition-all cursor-pointer hover:-translate-y-0.5 hover:border-violet-500/40 hover:shadow-lg hover:shadow-violet-500/5 ${panel}`}
             >
               <span
                 className={`absolute inset-x-0 top-0 h-0.5 rounded-t-2xl ${HEALTH_ACCENT[p.health] || HEALTH_ACCENT['on-track']}`}
