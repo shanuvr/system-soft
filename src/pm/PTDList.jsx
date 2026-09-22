@@ -72,8 +72,8 @@ export default function PTDList({ dark, onOpen }) {
       </div>
 
       {/* PTD table */}
-      <div className={`overflow-hidden rounded-2xl border ${panel}`}>
-        <table className="w-full text-left text-sm">
+      <div className={`overflow-x-auto rounded-2xl border ${panel}`}>
+        <table className="w-full min-w-[620px] text-left text-sm">
           <thead>
             <tr className={`border-b text-xs uppercase tracking-wide ${muted}`}>
               <th className="px-4 py-3 font-medium">PTD</th>

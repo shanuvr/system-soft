@@ -213,88 +213,90 @@ const toggleMenu = (id, evt) => {
             No work orders yet — click "Add Work Orders" to split this PTD and assign man-hours.
           </div>
         ) : (
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className={`border-b text-xs uppercase tracking-wide ${muted}`}>
-                <th className="px-5 py-2.5 font-medium">Work Order</th>
-                <th className="px-5 py-2.5 font-medium">Assignee</th>
-                <th className="px-5 py-2.5 font-medium">Est</th>
-                <th className="px-5 py-2.5 font-medium">Actual</th>
-                <th className="px-5 py-2.5 font-medium">Priority</th>
-                <th className="px-5 py-2.5 font-medium">Due</th>
-                <th className="px-5 py-2.5 font-medium">Status</th>
-                <th className="px-5 py-2.5 font-medium">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {woList.map((w) => (
-                <tr key={w.id} className={`border-b last:border-0 transition-colors ${rowHover}`}>
-                  <td className="px-5 py-3">
-                    <div className={`font-medium ${heading}`}>{w.title}</div>
-                    <div className={`mt-0.5 max-w-[260px] truncate text-xs ${muted}`}>
-                      {w.description || '—'}
-                    </div>
-                  </td>
-                  <td className={`px-5 py-3 ${muted}`}>{usersById[w.assignee]?.name || '—'}</td>
-                  <td className={`px-5 py-3 font-semibold tabular-nums ${heading}`}>{w.estimatedHours}h</td>
-                  <td className={`px-5 py-3 font-semibold tabular-nums ${heading}`}>{w.actualHours}h</td>
-                  <td className="px-5 py-3">
-                    <PriorityBadge priority={w.priority} />
-                  </td>
-                  <td className={`px-5 py-3 text-xs tabular-nums ${muted}`}>{w.dueDate || '—'}</td>
-                  <td className="px-5 py-3">
-                    <WoStatusBadge status={w.status} />
-                  </td>
-                  <td className="px-5 py-3">
-                    <div className="relative">
-                      <button
-                        onClick={(e) => toggleMenu(w.id, e)}
-                        className={`rounded-md p-1.5 cursor-pointer ${
-                          dark ? 'text-zinc-400 hover:bg-zinc-800 hover:text-violet-400' : 'text-zinc-500 hover:bg-zinc-200 hover:text-violet-600'
-                        }`}
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
-                      {openMenuId === w.id && (
-                        <div
-                          className={`absolute ${
-                            menuUp ? 'bottom-full mb-1' : 'top-full mt-1'
-                          } right-0 z-30 w-36 overflow-hidden rounded-lg border py-1 shadow-lg ${
-                            dark
-                              ? 'border-zinc-700 bg-zinc-900 shadow-black/50'
-                              : 'border-zinc-200 bg-white shadow-zinc-400/30'
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[650px] text-left text-sm">
+              <thead>
+                <tr className={`border-b text-xs uppercase tracking-wide ${muted}`}>
+                  <th className="px-5 py-2.5 font-medium">Work Order</th>
+                  <th className="px-5 py-2.5 font-medium">Assignee</th>
+                  <th className="px-5 py-2.5 font-medium">Est</th>
+                  <th className="px-5 py-2.5 font-medium">Actual</th>
+                  <th className="px-5 py-2.5 font-medium">Priority</th>
+                  <th className="px-5 py-2.5 font-medium">Due</th>
+                  <th className="px-5 py-2.5 font-medium">Status</th>
+                  <th className="px-5 py-2.5 font-medium">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {woList.map((w) => (
+                  <tr key={w.id} className={`border-b last:border-0 transition-colors ${rowHover}`}>
+                    <td className="px-5 py-3">
+                      <div className={`font-medium ${heading}`}>{w.title}</div>
+                      <div className={`mt-0.5 max-w-[260px] truncate text-xs ${muted}`}>
+                        {w.description || '—'}
+                      </div>
+                    </td>
+                    <td className={`px-5 py-3 ${muted}`}>{usersById[w.assignee]?.name || '—'}</td>
+                    <td className={`px-5 py-3 font-semibold tabular-nums ${heading}`}>{w.estimatedHours}h</td>
+                    <td className={`px-5 py-3 font-semibold tabular-nums ${heading}`}>{w.actualHours}h</td>
+                    <td className="px-5 py-3">
+                      <PriorityBadge priority={w.priority} />
+                    </td>
+                    <td className={`px-5 py-3 text-xs tabular-nums ${muted}`}>{w.dueDate || '—'}</td>
+                    <td className="px-5 py-3">
+                      <WoStatusBadge status={w.status} />
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="relative">
+                        <button
+                          onClick={(e) => toggleMenu(w.id, e)}
+                          className={`rounded-md p-1.5 cursor-pointer ${
+                            dark ? 'text-zinc-400 hover:bg-zinc-800 hover:text-violet-400' : 'text-zinc-500 hover:bg-zinc-200 hover:text-violet-600'
                           }`}
                         >
-                          <button
-                            onClick={() => {
-                              setOpenMenuId(null);
-                              openEdit(w);
-                            }}
-                            className={`flex w-full items-center gap-2 px-3 py-2 text-xs cursor-pointer ${
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+                        {openMenuId === w.id && (
+                          <div
+                            className={`absolute ${
+                              menuUp ? 'bottom-full mb-1' : 'top-full mt-1'
+                            } right-0 z-30 w-36 overflow-hidden rounded-lg border py-1 shadow-lg ${
                               dark
-                                ? 'text-zinc-300 hover:bg-zinc-800'
-                                : 'text-zinc-700 hover:bg-zinc-100'
+                                ? 'border-zinc-700 bg-zinc-900 shadow-black/50'
+                                : 'border-zinc-200 bg-white shadow-zinc-400/30'
                             }`}
                           >
-                            <Pencil className="h-3.5 w-3.5" /> Edit
-                          </button>
-                          <button
-                            onClick={() => {
-                              setOpenMenuId(null);
-                              deleteWorkOrder(w.id);
-                            }}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-xs text-red-500 hover:bg-red-500/10 cursor-pointer"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" /> Delete
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                            <button
+                              onClick={() => {
+                                setOpenMenuId(null);
+                                openEdit(w);
+                              }}
+                              className={`flex w-full items-center gap-2 px-3 py-2 text-xs cursor-pointer ${
+                                dark
+                                  ? 'text-zinc-300 hover:bg-zinc-800'
+                                  : 'text-zinc-700 hover:bg-zinc-100'
+                              }`}
+                            >
+                              <Pencil className="h-3.5 w-3.5" /> Edit
+                            </button>
+                            <button
+                              onClick={() => {
+                                setOpenMenuId(null);
+                                deleteWorkOrder(w.id);
+                              }}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-xs text-red-500 hover:bg-red-500/10 cursor-pointer"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" /> Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

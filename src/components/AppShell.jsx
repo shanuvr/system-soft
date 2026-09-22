@@ -48,6 +48,7 @@ export default function AppShell({ initialApp = 'dashboard' }) {
   useEffect(() => {
     try {
       localStorage.setItem(THEME_KEY, dark ? 'dark' : 'light');
+      document.body.style.backgroundColor = dark ? '#18181b' : '#f4f4f5';
     } catch {
       // ignore
     }
@@ -105,20 +106,20 @@ export default function AppShell({ initialApp = 'dashboard' }) {
 
   return (
     <div
-      className={`relative flex h-full w-full flex-col font-sans transition-colors duration-300 ${
-        dark ? 'bg-zinc-900' : 'bg-zinc-100'
+      className={`relative flex h-full w-full max-w-full flex-col font-sans overflow-x-hidden transition-colors duration-300 ${
+        dark ? 'bg-zinc-900 text-zinc-100' : 'bg-zinc-100 text-zinc-800'
       }`}
     >
       {/* Top panel */}
       <header
-        className={`flex items-center justify-between border-b px-4 py-2 backdrop-blur-md transition-colors ${panelOn} ${panelBorder}`}
+        className={`flex items-center justify-between border-b px-3 sm:px-4 py-2 backdrop-blur-md transition-colors ${panelOn} ${panelBorder} shrink-0`}
       >
-        <div className="flex items-center gap-3 text-sm">
-          <span className="font-semibold text-violet-500">System Soft</span>
-          <span className={`hidden text-xs sm:inline ${contentOn}`}>Programser International</span>
+        <div className="flex items-center gap-2 sm:gap-3 text-sm shrink-0">
+          <span className="font-semibold text-violet-500 whitespace-nowrap">System Soft</span>
+          <span className={`hidden md:inline text-xs ${contentOn}`}>Programser International</span>
         </div>
-        <div className="text-xs tabular-nums">{now}</div>
-        <div className="flex items-center gap-2">
+        <div className="hidden sm:block text-xs tabular-nums text-center px-2 truncate">{now}</div>
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <button
             onClick={() => setDark((d) => !d)}
             title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -128,9 +129,9 @@ export default function AppShell({ initialApp = 'dashboard' }) {
           >
             {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
-          <div className="flex flex-col items-end leading-tight">
-            <span className={`text-xs font-medium ${contentOn}`}>{currentUser?.name}</span>
-            <span className={`text-[10px] ${contentOn}`}>{ROLE_LABELS[role] || role}</span>
+          <div className="flex flex-col items-end leading-tight max-w-[85px] sm:max-w-none">
+            <span className={`text-xs font-medium truncate ${contentOn}`}>{currentUser?.name}</span>
+            <span className={`hidden sm:inline text-[10px] ${contentOn}`}>{ROLE_LABELS[role] || role}</span>
           </div>
           <button
             onClick={() => navigate(HOME, { replace: true })}
@@ -168,10 +169,10 @@ export default function AppShell({ initialApp = 'dashboard' }) {
       </header>
 
       {/* Workspace content */}
-      <main className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden">{renderView()}</main>
+      <main className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden min-w-0">{renderView()}</main>
 
       {/* Bottom dock */}
-      <div className="flex items-end justify-center pb-3">
+      <div className="flex w-full max-w-full min-w-0 items-end justify-center px-2 pb-3 shrink-0">
         <RoleDock
           activeApp={activeApp}
           showApps={showApps}

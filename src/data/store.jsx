@@ -108,6 +108,32 @@ export function AppProvider({ children }) {
     return newWorkOrders.length;
   };
 
+  const updateWorkOrderStatus = (id, status) => {
+    setDb((prev) => {
+      const target = prev.workOrders.find((w) => w.id === id);
+      if (!target) return prev;
+      const today = new Date().toISOString().slice(0, 10);
+      const project = prev.projects.find((p) => p.id === target.projectId);
+      return {
+        ...prev,
+        workOrders: prev.workOrders.map((w) => (w.id === id ? { ...w, status } : w)),
+        activity: [
+          {
+            id: uid('a'),
+            date: today,
+            time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+            actor: currentUser?.name || 'User',
+            projectId: target.projectId,
+            text: `${currentUser?.name || 'User'} set "${target.title}" to ${status.replaceAll('-', ' ')}${
+              project ? ` in ${project.name}` : ''
+            }`,
+          },
+          ...(prev.activity || []),
+        ],
+      };
+    });
+  };
+
   const updateWorkOrder = (id, patch) => {
     setDb((prev) => {
       const target = prev.workOrders.find((w) => w.id === id);
@@ -152,6 +178,147 @@ export function AppProvider({ children }) {
     });
   };
 
+  const createProject = (projectData) => {
+    const id = uid('p');
+    const today = new Date().toISOString().slice(0, 10);
+    const newProject = {
+      id,
+      name: projectData.name.trim(),
+      client: projectData.client?.trim() || 'Internal',
+      pm: projectData.pm || currentUser?.id || 'u1',
+      status: projectData.status || 'not-started',
+      priority: projectData.priority || 'medium',
+      startDate: projectData.startDate || today,
+      dueDate: projectData.dueDate || '',
+      team: projectData.team || [],
+      description: projectData.description?.trim() || '',
+    };
+    const defaultMilestones = [
+      { id: uid('m'), projectId: id, name: 'Requirement', status: 'pending' },
+      { id: uid('m'), projectId: id, name: 'UI Design', status: 'pending' },
+      { id: uid('m'), projectId: id, name: 'Development', status: 'pending' },
+      { id: uid('m'), projectId: id, name: 'Testing', status: 'pending' },
+      { id: uid('m'), projectId: id, name: 'Deployment', status: 'pending' },
+    ];
+    setDb((prev) => ({
+      ...prev,
+      projects: [newProject, ...prev.projects],
+      milestones: [...(prev.milestones || []), ...defaultMilestones],
+      activity: [
+        {
+          id: uid('a'),
+          date: today,
+          time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+          actor: currentUser?.name || 'Project Manager',
+          projectId: id,
+          text: `created new project "${newProject.name}"`,
+        },
+        ...(prev.activity || []),
+      ],
+    }));
+    return id;
+  };
+
+  const updateProject = (id, patch) => {
+    setDb((prev) => ({
+      ...prev,
+      projects: prev.projects.map((p) => (p.id === id ? { ...p, ...patch } : p)),
+    }));
+  };
+
+  const deleteProject = (id) => {
+    setDb((prev) => ({
+      ...prev,
+      projects: prev.projects.filter((p) => p.id !== id),
+      ptds: prev.ptds.filter((t) => t.projectId !== id),
+      workOrders: prev.workOrders.filter((w) => w.projectId !== id),
+      milestones: (prev.milestones || []).filter((m) => m.projectId !== id),
+      activity: (prev.activity || []).filter((a) => a.projectId !== id),
+    }));
+  };
+
+  const updateMilestone = (id, patch) => {
+    setDb((prev) => ({
+      ...prev,
+      milestones: (prev.milestones || []).map((m) => (m.id === id ? { ...m, ...patch } : m)),
+    }));
+  };
+
+  const raiseBlocker = (blockerData) => {
+    const id = uid('b');
+    const today = new Date().toISOString().slice(0, 10);
+    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const targetWo = db.workOrders.find((w) => w.id === blockerData.workOrderId);
+    const newBlocker = {
+      id,
+      description: blockerData.description.trim(),
+      projectId: blockerData.projectId || targetWo?.projectId || null,
+      workOrderId: blockerData.workOrderId || null,
+      developerId: blockerData.developerId || currentUser?.id || 'u2',
+      priority: blockerData.priority || 'high',
+      type: blockerData.type || 'Technical issue',
+      dateRaised: today,
+      status: 'open',
+    };
+    setDb((prev) => ({
+      ...prev,
+      blockers: [newBlocker, ...(prev.blockers || [])],
+      notifications: [
+        {
+          id: uid('n'),
+          title: `New blocker raised by ${currentUser?.name || 'Developer'}: ${newBlocker.description}`,
+          read: false,
+        },
+        ...(prev.notifications || []),
+      ],
+      activity: [
+        {
+          id: uid('a'),
+          date: today,
+          time,
+          actor: currentUser?.name || 'Developer',
+          projectId: newBlocker.projectId,
+          text: `raised blocker: "${newBlocker.description}"`,
+        },
+        ...(prev.activity || []),
+      ],
+    }));
+  };
+
+  const logHours = (workOrderId, hours, note = '') => {
+    const hrs = Number(hours) || 0;
+    if (hrs <= 0) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const targetWo = db.workOrders.find((w) => w.id === workOrderId);
+    if (!targetWo) return;
+
+    setDb((prev) => {
+      const updatedWorkOrders = prev.workOrders.map((w) =>
+        w.id === workOrderId ? { ...w, actualHours: (w.actualHours || 0) + hrs } : w,
+      );
+      const ptdWos = updatedWorkOrders.filter((w) => w.ptdId === targetWo.ptdId);
+      const usedHours = ptdWos.reduce((s, w) => s + (w.actualHours || 0), 0);
+
+      return {
+        ...prev,
+        workOrders: updatedWorkOrders,
+        ptds: prev.ptds.map((p) => (p.id === targetWo.ptdId ? { ...p, usedHours } : p)),
+        activity: [
+          {
+            id: uid('a'),
+            date: today,
+            time,
+            actor: currentUser?.name || 'Developer',
+            projectId: targetWo.projectId,
+            text: `logged ${hrs}h on "${targetWo.title}"${note ? ` (${note})` : ''}`,
+          },
+          ...(prev.activity || []),
+        ],
+      };
+    });
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -163,7 +330,14 @@ export function AppProvider({ children }) {
         updatePtd,
         createWorkOrders,
         updateWorkOrder,
+        updateWorkOrderStatus,
         deleteWorkOrder,
+        createProject,
+        updateProject,
+        deleteProject,
+        updateMilestone,
+        raiseBlocker,
+        logHours,
       }}
     >
       {children}
