@@ -57,7 +57,7 @@ const HEALTH_ACCENT = { 'on-track': 'bg-violet-500', 'at-risk': 'bg-amber-500', 
 function StatusChip({ status }) {
   return (
     <span
-      className={`rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
+      className={`rounded px-1.5 py-px text-[9px] font-semibold uppercase ${
         PROJECT_STATUS_STYLES[status] || 'bg-zinc-500/15 text-zinc-400'
       }`}
     >
@@ -69,7 +69,7 @@ function StatusChip({ status }) {
 function HealthBadge({ health }) {
   return (
     <span
-      className={`rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
+      className={`rounded px-1.5 py-px text-[9px] font-semibold uppercase ${
         HEALTH_STYLES[health] || HEALTH_STYLES['on-track']
       }`}
     >
@@ -143,7 +143,7 @@ export default function Projects({ dark }) {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('urgency'); // urgency, progress, name, hours
-  const [viewMode, setViewMode] = useState('grid'); // grid, table
+  const [viewMode, setViewMode] = useState('table'); // grid, table
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   // New project form state
@@ -1126,12 +1126,12 @@ export default function Projects({ dark }) {
             <thead>
               <tr className={`border-b text-xs uppercase tracking-wider ${muted}`}>
                 <th className="px-4 py-3 font-medium">Project & Client</th>
-                <th className="px-4 py-3 font-medium">Status & Health</th>
                 <th className="px-4 py-3 font-medium">Priority</th>
                 <th className="px-4 py-3 font-medium">Delivery Progress</th>
                 <th className="px-4 py-3 font-medium">Hours (Used / Est)</th>
                 <th className="px-4 py-3 font-medium">Deadline</th>
                 <th className="px-4 py-3 font-medium">Team</th>
+                <th className="px-4 py-3 font-medium">Status & Health</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
@@ -1149,12 +1149,6 @@ export default function Projects({ dark }) {
                     <td className="px-4 py-3">
                       <div className={`font-bold ${heading}`}>{p.name}</div>
                       <div className="text-xs text-violet-400">{p.client}</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <StatusChip status={p.status} />
-                        <HealthBadge health={p.health} />
-                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <PriorityBadge priority={p.priority} />
@@ -1180,6 +1174,12 @@ export default function Projects({ dark }) {
                       </div>
                     </td>
                     <td className="px-4 py-3">{memberStack(p.teamMembers)}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5">
+                        <StatusChip status={p.status} />
+                        <HealthBadge health={p.health} />
+                      </div>
+                    </td>
                     <td className="px-4 py-3 text-right">
                       <ChevronRight className="h-4 w-4 text-zinc-400" />
                     </td>

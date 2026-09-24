@@ -24,7 +24,7 @@ function TermInput({ value, onChange, onEnter, secret = false, autoFocus = false
       </span>
       <span className="absolute inset-y-0 left-0 whitespace-pre text-zinc-100">
         {display}
-        <span className="terminal-cursor text-violet-400 inline-block select-none">▉</span>
+        <span className="terminal-cursor text-zinc-100 inline-block select-none">▉</span>
       </span>
       <input
         ref={refProp}
@@ -168,7 +168,7 @@ export default function Login() {
             {line.type === 'ok' ? (
               <>
                 <span className="text-zinc-600">[</span>
-                <span className="text-violet-400 font-semibold">&nbsp;OK&nbsp;</span>
+                <span className="text-zinc-100 font-semibold">&nbsp;OK&nbsp;</span>
                 <span className="text-zinc-600">]</span>
                 <span className="text-zinc-300">
                   {' '}
@@ -195,13 +195,13 @@ export default function Login() {
           <div key={idx} className="whitespace-pre-wrap break-words">
             {item.type === 'login' && (
               <>
-                <span className="text-violet-400">system-soft login: </span>
+                <span className="text-zinc-100">system-soft login: </span>
                 <span className="text-zinc-100">{item.text}</span>
               </>
             )}
             {item.type === 'password' && (
               <>
-                <span className="text-violet-400">Password: </span>
+                <span className="text-zinc-100">Password: </span>
                 <span className="text-zinc-100">{'•'.repeat(item.length)}</span>
               </>
             )}
@@ -213,7 +213,7 @@ export default function Login() {
         {/* Interactive login prompt */}
         {!booting && step === 'username' && (
           <div className="whitespace-pre-wrap break-words">
-            <span className="text-violet-400">system-soft login:&nbsp;</span>
+            <span className="text-zinc-100">system-soft login:&nbsp;</span>
             <TermInput
               ref={usernameRef}
               value={username}
@@ -227,7 +227,7 @@ export default function Login() {
         {!booting && step === 'password' && (
           <>
             <div className="whitespace-pre-wrap break-words">
-              <span className="text-violet-400">Password:&nbsp;</span>
+              <span className="text-zinc-100">Password:&nbsp;</span>
               <TermInput
                 ref={passwordRef}
                 value={password}

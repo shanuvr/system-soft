@@ -279,7 +279,7 @@ export default function Calendar({ dark }) {
   };
 
   return (
-    <div className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6">
+    <div className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6">
       {/* Header */}
       <div className="mb-5">
         <h1 className={`text-2xl font-bold ${heading}`}>Calendar</h1>
@@ -288,11 +288,11 @@ export default function Calendar({ dark }) {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 items-start lg:grid-cols-[1fr_330px]">
+      <div className="grid grid-cols-1 gap-4 items-start lg:grid-cols-[1fr_300px]">
         {/* Month view */}
         <div className={`rounded-2xl border ${panel}`}>
           {/* Toolbar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-5 border-b border-zinc-800/50">
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 sm:px-5 border-b border-zinc-800/50">
             <h2 className={`text-sm font-bold ${heading}`}>{monthLabel}</h2>
             <div className="flex items-center gap-1.5">
               <button
@@ -317,7 +317,7 @@ export default function Calendar({ dark }) {
           </div>
 
           {/* Legend */}
-          <div className={`flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2.5 sm:px-5 border-b ${border} text-[10px] ${muted}`}>
+          <div className={`flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2 sm:px-5 border-b ${border} text-[10px] ${muted}`}>
             {Object.entries(TYPE_META).map(([key, m]) => (
               <span key={key} className="flex items-center gap-1.5 capitalize">
                 <span className={`h-1.5 w-1.5 rounded-full ${m.dot}`} /> {m.label}
@@ -328,7 +328,7 @@ export default function Calendar({ dark }) {
           {/* Weekday header */}
           <div className="grid grid-cols-7 border-b border-zinc-800/50">
             {WEEKDAYS.map((d) => (
-              <div key={d} className={`px-2 py-2 text-center text-[10px] font-semibold uppercase ${muted}`}>
+              <div key={d} className={`px-2 py-1.5 text-center text-[10px] font-semibold uppercase ${muted}`}>
                 {d}
               </div>
             ))}
@@ -348,7 +348,7 @@ export default function Calendar({ dark }) {
                 <button
                   key={iso}
                   onClick={() => handleDayClick(day)}
-                  className={`flex min-h-[72px] flex-col items-stretch gap-1 border-b border-r border-zinc-800/40 p-1.5 text-left transition-colors cursor-pointer sm:min-h-[84px] sm:p-2 ${
+                  className={`flex min-h-[52px] flex-col items-stretch gap-0.5 border-b border-r border-zinc-800/40 p-1 text-left transition-colors cursor-pointer sm:min-h-[60px] sm:p-1.5 ${
                     inMonth ? (dark ? 'bg-zinc-900/30 hover:bg-zinc-800/40' : 'bg-white/40 hover:bg-zinc-50') : 'opacity-40'
                   } ${
                     isSelected
@@ -359,35 +359,35 @@ export default function Calendar({ dark }) {
                   }`}
                   style={{ borderLeft: inMonth && day.getDay() === 0 ? 'none' : undefined }}
                 >
-                  <span
-                    className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold ${
-                      isToday
-                        ? dark
-                          ? 'bg-zinc-200 text-zinc-900'
-                          : 'bg-zinc-900 text-white'
-                        : hasOverdue
-                          ? 'text-rose-400'
-                          : inMonth
-                            ? heading
-                            : muted
-                    }`}
-                  >
-                    {day.getDate()}
-                  </span>
-                  <div className="flex flex-col gap-0.5">
-                    {dayEvents.slice(0, 3).map((ev) => (
-                      <span
-                        key={ev.id}
-                        className={`truncate rounded px-1 py-0.5 text-[9px] font-medium leading-tight ${TYPE_META[ev.type].chip} ${
-                          ev.done ? 'line-through opacity-60' : ''
-                        }`}
-                      >
-                        {ev.title}
-                      </span>
-                    ))}
-                    {dayEvents.length > 3 && (
-                      <span className={`px-1 text-[9px] font-semibold ${muted}`}>+{dayEvents.length - 3} more</span>
-                    )}
+<span
+                      className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold ${
+                        isToday
+                          ? dark
+                            ? 'bg-zinc-200 text-zinc-900'
+                            : 'bg-zinc-900 text-white'
+                          : hasOverdue
+                            ? 'text-rose-400'
+                            : inMonth
+                              ? heading
+                              : muted
+                      }`}
+                    >
+                      {day.getDate()}
+                    </span>
+                    <div className="flex flex-col gap-0.5">
+                      {dayEvents.slice(0, 2).map((ev) => (
+                        <span
+                          key={ev.id}
+                          className={`truncate rounded px-1 py-px text-[9px] font-medium leading-tight ${TYPE_META[ev.type].chip} ${
+                            ev.done ? 'line-through opacity-60' : ''
+                          }`}
+                        >
+                          {ev.title}
+                        </span>
+                      ))}
+                      {dayEvents.length > 2 && (
+                        <span className={`px-1 text-[9px] font-semibold ${muted}`}>+{dayEvents.length - 2} more</span>
+                      )}
                   </div>
                 </button>
               );

@@ -244,8 +244,105 @@ export default function DetailedPtd({ dark, ptdId, onBack }) {
             No work orders yet — click "Add Work Orders" to split this PTD and assign man-hours.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[650px] text-left text-sm">
+          <>
+            {/* Work order cards (mobile) */}
+            <div className="flex flex-col gap-2.5 p-3 sm:hidden">
+              {woList.map((w) => (
+                <div key={w.id} className={`rounded-xl border p-3 ${dark ? 'border-zinc-800' : 'border-zinc-200'}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className={`text-sm font-medium leading-tight ${heading}`}>{w.title}</div>
+                      <div className={`mt-0.5 truncate text-xs ${muted}`}>{w.description || '—'}</div>
+                    </div>
+                    <div className="relative shrink-0">
+                      <button
+                        onClick={(e) => toggleMenu(w.id, e)}
+                        className={`rounded-md p-1.5 cursor-pointer ${
+                          dark ? 'text-zinc-400 hover:bg-zinc-800 hover:text-violet-400' : 'text-zinc-500 hover:bg-zinc-200 hover:text-violet-600'
+                        }`}
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+                      {openMenuId === w.id && menuPos && (
+                        <div
+                          style={{
+                            position: 'fixed',
+                            top: `${menuPos.top}px`,
+                            right: `${menuPos.right}px`,
+                          }}
+                          className={`z-50 w-36 overflow-hidden rounded-lg border py-1 shadow-lg ${
+                            dark
+                              ? 'border-zinc-700 bg-zinc-900 shadow-black/50'
+                              : 'border-zinc-200 bg-white shadow-zinc-400/30'
+                          }`}
+                        >
+                          <button
+                            onClick={() => {
+                              setOpenMenuId(null);
+                              setMenuPos(null);
+                              openEdit(w);
+                            }}
+                            className={`flex w-full items-center gap-2 px-3 py-2 text-xs cursor-pointer ${
+                              dark
+                                ? 'text-zinc-300 hover:bg-zinc-800'
+                                : 'text-zinc-700 hover:bg-zinc-100'
+                            }`}
+                          >
+                            <Pencil className="h-3.5 w-3.5" /> Edit
+                          </button>
+                          <button
+                            onClick={() => {
+                              setOpenMenuId(null);
+                              setMenuPos(null);
+                              deleteWorkOrder(w.id);
+                            }}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-xs text-red-500 hover:bg-red-500/10 cursor-pointer"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" /> Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className={`mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs ${muted}`}>
+                    <span>
+                      Assignee: <span className={heading}>{usersById[w.assignee]?.name || '—'}</span>
+                    </span>
+                    <span>
+                      Est{' '}
+                      <span className={`font-semibold tabular-nums ${heading}`}>{w.estimatedHours}h</span>
+                    </span>
+                    <span>
+                      Used{' '}
+                      <span className={`font-semibold tabular-nums ${heading}`}>{w.actualHours}h</span>
+                    </span>
+                  </div>
+
+                  <div className="mt-2 flex items-center gap-2">
+                    <div className={`h-1.5 flex-1 overflow-hidden rounded-full ${dark ? 'bg-zinc-800' : 'bg-zinc-200'}`}>
+                      <div
+                        className="h-full rounded-full bg-violet-500"
+                        style={{ width: `${Math.min(100, Math.max(0, w.progress ?? 0))}%` }}
+                      />
+                    </div>
+                    <span className={`shrink-0 text-xs font-medium tabular-nums ${heading}`}>{w.progress ?? 0}%</span>
+                  </div>
+
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <PriorityBadge priority={w.priority} />
+                      <WoStatusBadge status={w.status} />
+                    </div>
+                    <span className={`shrink-0 text-xs tabular-nums ${muted}`}>Due {w.dueDate || '—'}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Work order table (desktop) */}
+            <div className="hidden overflow-x-auto sm:block">
+              <table className="w-full min-w-[650px] text-left text-sm">
               <thead>
                 <tr className={`border-b text-xs uppercase tracking-wide ${muted}`}>
                   <th className="px-5 py-2.5 font-medium">Work Order</th>
@@ -343,8 +440,9 @@ export default function DetailedPtd({ dark, ptdId, onBack }) {
                   </tr>
                 ))}
               </tbody>
-            </table>
-          </div>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

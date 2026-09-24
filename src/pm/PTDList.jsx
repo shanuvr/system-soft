@@ -71,8 +71,61 @@ export default function PTDList({ dark, onOpen }) {
         </div>
       </div>
 
-      {/* PTD table */}
-      <div className={`overflow-x-auto rounded-2xl border ${panel}`}>
+      {/* PTD cards (mobile) */}
+      <div className="flex flex-col gap-2.5 sm:hidden">
+        {filtered.map((p) => (
+          <button
+            key={p.id}
+            onClick={() => onOpen(p.id)}
+            className={`rounded-2xl border p-3.5 text-left transition-colors cursor-pointer ${panel} ${rowHover}`}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className={`text-sm font-semibold leading-tight ${heading}`}>
+                  <span className="text-violet-500">{p.ref}</span> · {p.name}
+                </div>
+                <div className={`mt-0.5 truncate text-xs ${muted}`}>{p.description || '—'}</div>
+              </div>
+              <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" />
+            </div>
+
+            <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2">
+              <PtdStatusBadge status={p.status} />
+              <span className={`text-xs tabular-nums ${muted}`}>
+                <span className={`font-semibold ${heading}`}>{p.progress}%</span> ·{' '}
+                {p.allocatedHours}h allocated
+              </span>
+            </div>
+
+            <div className="mt-2 flex items-center gap-2">
+              <div className={`h-1.5 flex-1 overflow-hidden rounded-full ${dark ? 'bg-zinc-800' : 'bg-zinc-200'}`}>
+                <div
+                  className="h-full rounded-full bg-violet-500"
+                  style={{ width: `${Math.min(100, Math.max(0, p.progress))}%` }}
+                />
+              </div>
+              <span className={`shrink-0 text-[11px] tabular-nums ${muted}`}>
+                est {p.estimatedHours}h · used {p.usedHours}h
+              </span>
+            </div>
+
+            <div className={`mt-2 flex items-center justify-between gap-2 text-xs ${muted}`}>
+              <span className="min-w-0 truncate">
+                {p.projectId ? projectsById[p.projectId]?.name || '—' : 'Unassigned'}
+              </span>
+              <span className="shrink-0 tabular-nums">Due {p.deadline || '—'}</span>
+            </div>
+          </button>
+        ))}
+        {filtered.length === 0 && (
+          <div className={`rounded-2xl border py-10 text-center text-sm ${panel} ${muted}`}>
+            No PTDs found.
+          </div>
+        )}
+      </div>
+
+      {/* PTD table (desktop) */}
+      <div className={`hidden overflow-x-auto rounded-2xl border sm:block ${panel}`}>
         <table className="w-full min-w-[620px] text-left text-sm">
           <thead>
             <tr className={`border-b text-xs uppercase tracking-wide ${muted}`}>

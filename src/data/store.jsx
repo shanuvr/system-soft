@@ -4,7 +4,7 @@ import { createSeed } from './seed';
 
 const DB_KEY = 'system-soft:db';
 const SESSION_KEY = 'system-soft:session';
-const SEED_VERSION = 15;
+const SEED_VERSION = 20;
 
 function readKey(key) {
   try {
@@ -25,6 +25,21 @@ function writeKey(key, value) {
 
 function uid(prefix) {
   return `${prefix}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+}
+
+function makeNotification(type, title, opts = {}) {
+  return {
+    id: uid('n'),
+    type,
+    title,
+    actor: opts.actor || '',
+    date: opts.date || '',
+    time: opts.time || '',
+    projectId: opts.projectId || null,
+    workOrderId: opts.workOrderId || null,
+    issueId: opts.issueId || null,
+    read: false,
+  };
 }
 
 let _woCounter = 0;
@@ -94,6 +109,7 @@ export function AppProvider({ children }) {
     const clean = rows.filter((r) => r.title && r.title.trim());
     if (!clean.length) return 0;
     const now = new Date().toISOString().slice(0, 10);
+    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
     const projectId = db.ptds.find((p) => p.id === ptdId)?.projectId || null;
     const newWorkOrders = clean.map((r) => ({
       id: nextWoId(db.workOrders),
@@ -135,6 +151,16 @@ export function AppProvider({ children }) {
               }
             : p,
         ),
+        notifications: [
+          makeNotification('assignment', `${newWorkOrders.length} new work order${newWorkOrders.length > 1 ? 's' : ''} created in PTD "${(prev.ptds.find((p) => p.id === ptdId) || {}).name || ptdId}"`, {
+            actor: currentUser?.name || 'Project Manager',
+            date: now,
+            time,
+            projectId,
+            workOrderId: newWorkOrders[0]?.id || null,
+          }),
+          ...(prev.notifications || []),
+        ],
       };
     });
     return newWorkOrders.length;
@@ -145,8 +171,11 @@ export function AppProvider({ children }) {
       const target = prev.workOrders.find((w) => w.id === id);
       if (!target) return prev;
       const today = new Date().toISOString().slice(0, 10);
+      const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
       const project = prev.projects.find((p) => p.id === target.projectId);
-      const autoProgress = status === 'completed' || status === 'done' ? 100 : target.progress;
+      const doneStatus = status === 'completed' || status === 'done';
+      const autoProgress = doneStatus ? 100 : target.progress;
+      const verb = doneStatus ? 'completed' : status === 'in-progress' ? 'started' : `set to ${status.replaceAll('-', ' ')}`;
 
       const workOrders = prev.workOrders.map((w) =>
         w.id === id ? { ...w, status, progress: autoProgress } : w,
@@ -167,11 +196,21 @@ export function AppProvider({ children }) {
               }
             : p,
         ),
+        notifications: [
+          makeNotification('status', `${currentUser?.name || 'User'} ${verb} "${target.title}"${project ? ` in ${project.name}` : ''}`, {
+            actor: currentUser?.name || 'User',
+            date: today,
+            time,
+            projectId: target.projectId,
+            workOrderId: target.id,
+          }),
+          ...(prev.notifications || []),
+        ],
         activity: [
           {
             id: uid('a'),
             date: today,
-            time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+            time,
             actor: currentUser?.name || 'User',
             projectId: target.projectId,
             text: `${currentUser?.name || 'User'} set "${target.title}" to ${status.replaceAll('-', ' ')}${
@@ -323,14 +362,6 @@ export function AppProvider({ children }) {
     setDb((prev) => ({
       ...prev,
       blockers: [newBlocker, ...(prev.blockers || [])],
-      notifications: [
-        {
-          id: uid('n'),
-          title: `New blocker raised by ${currentUser?.name || 'Developer'}: ${newBlocker.description}`,
-          read: false,
-        },
-        ...(prev.notifications || []),
-      ],
       activity: [
         {
           id: uid('a'),
@@ -364,6 +395,16 @@ export function AppProvider({ children }) {
         ...prev,
         workOrders: updatedWorkOrders,
         ptds: prev.ptds.map((p) => (p.id === targetWo.ptdId ? { ...p, usedHours } : p)),
+        notifications: [
+          makeNotification('hours', `${currentUser?.name || 'Developer'} logged ${hrs}h on "${targetWo.title}"${note ? ` (${note})` : ''}`, {
+            actor: currentUser?.name || 'Developer',
+            date: today,
+            time,
+            projectId: targetWo.projectId,
+            workOrderId: targetWo.id,
+          }),
+          ...(prev.notifications || []),
+        ],
         activity: [
           {
             id: uid('a'),
@@ -426,6 +467,16 @@ export function AppProvider({ children }) {
               }
             : p,
         ),
+        notifications: [
+          makeNotification('assignment', `New work order "${newWo.title}" assigned to ${(prev.users.find((u) => u.id === newWo.assignee) || {}).name || 'a developer'}${project ? ` in ${project.name}` : ''}`, {
+            actor: currentUser?.name || 'Project Manager',
+            date: now,
+            time,
+            projectId: newWo.projectId,
+            workOrderId: newWo.id,
+          }),
+          ...(prev.notifications || []),
+        ],
         activity: [
           {
             id: uid('a'),
@@ -531,11 +582,13 @@ export function AppProvider({ children }) {
             : w,
         ),
         notifications: [
-          {
-            id: uid('n'),
-            title: `Work order "${target.title}" submitted for review by ${currentUser?.name || 'Developer'}`,
-            read: false,
-          },
+          makeNotification('review', `Work order "${target.title}" submitted for review by ${currentUser?.name || 'Developer'}`, {
+            actor: currentUser?.name || 'Developer',
+            date: today,
+            time,
+            projectId: target.projectId,
+            workOrderId: target.id,
+          }),
           ...(prev.notifications || []),
         ],
         activity: [
@@ -582,13 +635,19 @@ export function AppProvider({ children }) {
             : w,
         ),
         notifications: [
-          {
-            id: uid('n'),
-            title: isApproved
+          makeNotification(
+            isApproved ? 'approval' : 'changes',
+            isApproved
               ? `Work order "${target.title}" was approved by PM!`
-              : `Changes requested on "${target.title}": ${feedbackNote}`,
-            read: false,
-          },
+              : `Changes requested on "${target.title}"${feedbackNote ? `: ${feedbackNote}` : ''}`,
+            {
+              actor: currentUser?.name || 'Project Manager',
+              date: today,
+              time,
+              projectId: target.projectId,
+              workOrderId: target.id,
+            },
+          ),
           ...(prev.notifications || []),
         ],
         activity: [
@@ -726,17 +785,20 @@ export function AppProvider({ children }) {
       dateReported: today,
       timeReported: time,
       resolution: '',
+      resolvedDate: null,
     };
 
     setDb((prev) => ({
       ...prev,
       issues: [newIssue, ...(prev.issues || [])],
       notifications: [
-        {
-          id: uid('n'),
-          title: `New issue "${newIssue.title}" assigned to ${dev?.name || 'a developer'}${project ? ` in ${project.name}` : ''}`,
-          read: false,
-        },
+        makeNotification('issue', `New issue "${newIssue.title}" assigned to ${dev?.name || 'a developer'}${project ? ` in ${project.name}` : ''}`, {
+          actor: currentUser?.name || 'User',
+          date: today,
+          time,
+          projectId: newIssue.projectId,
+          issueId: newIssue.id,
+        }),
         ...(prev.notifications || []),
       ],
       activity: [
@@ -763,14 +825,23 @@ export function AppProvider({ children }) {
       return {
         ...prev,
         issues: (prev.issues || []).map((i) =>
-          i.id === id ? { ...i, status, resolution: note.trim() || i.resolution } : i,
+          i.id === id
+            ? {
+                ...i,
+                status,
+                resolution: note.trim() || i.resolution,
+                resolvedDate: status === 'resolved' || status === 'closed' ? today : i.resolvedDate,
+              }
+            : i,
         ),
         notifications: [
-          {
-            id: uid('n'),
-            title: `Issue "${target.title}" marked as ${status.replaceAll('-', ' ')} by ${currentUser?.name || 'User'}`,
-            read: false,
-          },
+          makeNotification('issue', `Issue "${target.title}" marked as ${status.replaceAll('-', ' ')} by ${currentUser?.name || 'User'}`, {
+            actor: currentUser?.name || 'User',
+            date: today,
+            time,
+            projectId: target.projectId,
+            issueId: target.id,
+          }),
           ...(prev.notifications || []),
         ],
         activity: [
@@ -786,6 +857,54 @@ export function AppProvider({ children }) {
         ],
       };
     });
+  };
+
+  const sendMessage = (toId, text, attachment = null) => {
+    const body = ('' + (text || '')).trim();
+    const att = attachment && attachment.name ? attachment : null;
+    if ((!body && !att) || !toId || toId === currentUser?.id) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const conv = [currentUser.id, toId].sort().join(':');
+    const msg = {
+      id: uid('m'),
+      conv,
+      from: currentUser.id,
+      to: toId,
+      text: body,
+      attachment: att,
+      date: today,
+      time,
+      read: false,
+    };
+    setDb((prev) => ({
+      ...prev,
+      messages: [...(prev.messages || []), msg],
+    }));
+  };
+
+  const markConversationRead = (peerId) => {
+    if (!peerId) return;
+    setDb((prev) => ({
+      ...prev,
+      messages: (prev.messages || []).map((m) =>
+        m.to === currentUser?.id && m.from === peerId ? { ...m, read: true } : m,
+      ),
+    }));
+  };
+
+  const markNotificationRead = (id) => {
+    setDb((prev) => ({
+      ...prev,
+      notifications: (prev.notifications || []).map((n) => (n.id === id ? { ...n, read: true } : n)),
+    }));
+  };
+
+  const markAllNotificationsRead = () => {
+    setDb((prev) => ({
+      ...prev,
+      notifications: (prev.notifications || []).map((n) => (n.read ? n : { ...n, read: true })),
+    }));
   };
 
   return (
@@ -820,6 +939,10 @@ export function AppProvider({ children }) {
         deleteFile,
         reportIssue,
         updateIssueStatus,
+        sendMessage,
+        markConversationRead,
+        markNotificationRead,
+        markAllNotificationsRead,
       }}
     >
       {children}

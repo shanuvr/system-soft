@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react';
 
-function DockItem({ label, active, activeColor, idleColor, dotColor, onClick, dark, children }) {
+function DockItem({ label, active, activeColor, idleColor, dotColor, onClick, dark, badge = 0, children }) {
   return (
     <button
       onClick={onClick}
@@ -26,6 +26,12 @@ function DockItem({ label, active, activeColor, idleColor, dotColor, onClick, da
         />
       </span>
 
+      {badge > 0 && (
+        <span className="absolute -right-1 -top-1 z-50 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white shadow-md">
+          {badge > 99 ? '99+' : badge}
+        </span>
+      )}
+
       <span
         className={`flex items-center justify-center transition-all duration-150 group-hover:scale-110 ${
           active ? activeColor : idleColor
@@ -47,6 +53,7 @@ export default function Dock({
   activeApp,
   showApps,
   dark,
+  badges = {},
   onSelectApp,
   onToggleApps,
   accentText = 'text-violet-500',
@@ -161,6 +168,7 @@ export default function Dock({
             activeColor={accentText}
             idleColor={idleColor}
             dotColor={dotColor}
+            badge={badges?.[app.id] || 0}
             onClick={() => onSelectApp(app.id)}
             dark={dark}
           >

@@ -416,7 +416,7 @@ export default function Issues({ dark }) {
         </div>
         <button
           onClick={() => setShowReport(true)}
-          className="flex items-center gap-1.5 rounded-xl bg-violet-600 px-3 py-2 text-xs font-semibold text-white shadow-md shadow-violet-600/30 transition-all cursor-pointer hover:bg-violet-500 active:scale-95"
+          className="flex w-fit items-center gap-1.5 rounded-xl bg-violet-600 px-3 py-2 text-xs font-semibold text-white shadow-md shadow-violet-600/30 transition-all cursor-pointer hover:bg-violet-500 active:scale-95"
         >
           <Plus className="h-4 w-4" />
           Report Issue
@@ -488,19 +488,19 @@ export default function Issues({ dark }) {
           const isMine = issue.assignedTo === currentUser?.id;
 
           return (
-            <div key={issue.id} className={`rounded-2xl border p-4 ${panel}`}>
+            <div key={issue.id} className={`rounded-2xl border p-3 sm:p-4 ${panel}`}>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
                 {/* Screenshot / category tile */}
                 {issue.screenshot ? (
                   <button
                     onClick={() => setViewImage({ src: issue.screenshot, name: issue.screenshotName })}
-                    className="h-20 w-28 shrink-0 overflow-hidden rounded-xl border border-zinc-800 cursor-pointer"
+                    className="h-12 w-16 shrink-0 overflow-hidden rounded-xl border border-zinc-800 cursor-pointer sm:h-20 sm:w-28"
                   >
                     <img src={issue.screenshot} alt={issue.screenshotName || 'Issue screenshot'} className="h-full w-full object-cover" />
                   </button>
                 ) : (
-                  <div className={`flex h-20 w-28 shrink-0 items-center justify-center rounded-xl border ${catCls}`}>
-                    <Bug className="h-7 w-7" />
+                  <div className={`flex h-12 w-16 shrink-0 items-center justify-center rounded-xl border sm:h-20 sm:w-28 ${catCls}`}>
+                    <Bug className="h-4 w-4 sm:h-7 sm:w-7" />
                   </div>
                 )}
 

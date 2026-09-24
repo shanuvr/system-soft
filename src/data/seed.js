@@ -5,10 +5,8 @@ function isoDaysFromNow(days) {
 }
 
 export function createSeed() {
-  const today = new Date().toISOString().slice(0, 10);
-
   return {
-    _seedVersion: 16,
+    _seedVersion: 20,
 
     users: [
       { id: 'u1', username: 'admin', password: 'admin', name: 'Ajoy Kumar', role: 'pm', title: 'Project Manager' },
@@ -125,6 +123,7 @@ export function createSeed() {
         dateReported: isoDaysFromNow(-2),
         timeReported: '11:24',
         resolution: '',
+        resolvedDate: null,
       },
       {
         id: 'iss2',
@@ -142,6 +141,7 @@ export function createSeed() {
         dateReported: isoDaysFromNow(-1),
         timeReported: '15:02',
         resolution: '',
+        resolvedDate: null,
       },
       {
         id: 'iss3',
@@ -159,6 +159,7 @@ export function createSeed() {
         dateReported: isoDaysFromNow(-4),
         timeReported: '09:47',
         resolution: 'Added SPF and DKIM headers; verification emails now land in the inbox.',
+        resolvedDate: isoDaysFromNow(-1),
       },
       {
         id: 'iss4',
@@ -176,6 +177,79 @@ export function createSeed() {
         dateReported: isoDaysFromNow(0),
         timeReported: '08:31',
         resolution: '',
+        resolvedDate: null,
+      },
+      {
+        id: 'iss5',
+        projectId: 'p2',
+        workOrderId: 'WORK-1005',
+        title: 'Reconciliation report times out for large batches',
+        category: 'Data',
+        priority: 'high',
+        description: 'Generating the daily reconciliation report times out when the batch exceeds 50k records.',
+        screenshot: null,
+        reportedBy: 'Ajoy Kumar',
+        reportedById: 'u1',
+        assignedTo: 'u3',
+        status: 'resolved',
+        dateReported: isoDaysFromNow(-6),
+        timeReported: '13:10',
+        resolution: 'Added chunked processing with a progress bar; report now completes under 30 seconds.',
+        resolvedDate: isoDaysFromNow(-3),
+      },
+      {
+        id: 'iss6',
+        projectId: 'p1',
+        workOrderId: 'WORK-1009',
+        title: 'Session cookie not set on slow networks',
+        category: 'Security',
+        priority: 'high',
+        description: 'On flaky connections the secure cookie is dropped and users are logged out mid-session.',
+        screenshot: null,
+        reportedBy: 'Rohan Mehta',
+        reportedById: 'u4',
+        assignedTo: 'u2',
+        status: 'in-progress',
+        dateReported: isoDaysFromNow(-3),
+        timeReported: '16:20',
+        resolution: '',
+        resolvedDate: null,
+      },
+      {
+        id: 'iss7',
+        projectId: 'p2',
+        workOrderId: 'WORK-1006',
+        title: 'API keys not rotating on schedule',
+        category: 'Security',
+        priority: 'medium',
+        description: 'Rotating credentials are not regenerated on the configured 30-day schedule for a set of service accounts.',
+        screenshot: null,
+        reportedBy: 'Ajoy Kumar',
+        reportedById: 'u1',
+        assignedTo: 'u2',
+        status: 'open',
+        dateReported: isoDaysFromNow(-5),
+        timeReported: '10:05',
+        resolution: '',
+        resolvedDate: null,
+      },
+      {
+        id: 'iss8',
+        projectId: 'p1',
+        workOrderId: 'WORK-1007',
+        title: '2FA code rejected after password change',
+        category: 'Functional',
+        priority: 'low',
+        description: 'A valid two-factor code is rejected right after a user changes their password until the next refresh.',
+        screenshot: null,
+        reportedBy: 'Rahul Sharma',
+        reportedById: 'u2',
+        assignedTo: 'u4',
+        status: 'closed',
+        dateReported: isoDaysFromNow(-9),
+        timeReported: '12:40',
+        resolution: 'Cleared the cached TOTP seed on password change; fixed via hotfix.',
+        resolvedDate: isoDaysFromNow(-7),
       },
     ],
 
@@ -217,6 +291,38 @@ export function createSeed() {
       { id: 'a5', date: isoDaysFromNow(-2), time: '11:00', actor: 'Arun Dev', projectId: 'p1', text: 'completed checklist item on "Session & Token Management"' },
     ],
 
-    notifications: [],
+    notifications: [
+      { id: 'n1', type: 'issue', title: 'New issue "Rate limiter blocks legitimate API calls" assigned to Rahul Sharma in Mobile Banking App', actor: 'Ajoy Kumar', date: isoDaysFromNow(0), time: '08:31', projectId: 'p2', workOrderId: null, issueId: 'iss4', read: false },
+      { id: 'n2', type: 'hours', title: 'Rahul Sharma logged 6h on "Message Queue Ingestion Service"', actor: 'Rahul Sharma', date: isoDaysFromNow(-1), time: '16:45', projectId: 'p2', workOrderId: 'WORK-1004', issueId: null, read: false },
+      { id: 'n3', type: 'issue', title: 'Issue "Password reset email lands in spam" marked as resolved by Rohan Mehta', actor: 'Rohan Mehta', date: isoDaysFromNow(-1), time: '10:05', projectId: 'p1', workOrderId: null, issueId: 'iss3', read: true },
+      { id: 'n4', type: 'approval', title: 'Work order "OAuth2 Login Flow" was approved by PM!', actor: 'Ajoy Kumar', date: isoDaysFromNow(-3), time: '14:20', projectId: 'p1', workOrderId: 'WORK-1007', issueId: null, read: true },
+      { id: 'n5', type: 'hours', title: 'Arun Dev logged 3h on "Transaction Reconciliation Engine"', actor: 'Arun Dev', date: isoDaysFromNow(-1), time: '10:30', projectId: 'p2', workOrderId: 'WORK-1005', issueId: null, read: true },
+      { id: 'n6', type: 'assignment', title: 'New work order "Public API Rate Limiter" assigned to Rahul Sharma in Mobile Banking App', actor: 'Ajoy Kumar', date: isoDaysFromNow(-2), time: '12:10', projectId: 'p2', workOrderId: 'WORK-1006', issueId: null, read: false },
+      { id: 'n7', type: 'review', title: 'Work order "Session & Token Management" submitted for review by Arun Dev', actor: 'Arun Dev', date: isoDaysFromNow(-2), time: '17:35', projectId: 'p1', workOrderId: 'WORK-1008', issueId: null, read: true },
+      { id: 'n8', type: 'changes', title: 'Changes requested on "Message Queue Ingestion Service": add retry backoff handling', actor: 'Ajoy Kumar', date: isoDaysFromNow(-3), time: '11:05', projectId: 'p2', workOrderId: 'WORK-1004', issueId: null, read: false },
+    ],
+
+    messages: [
+      // Ajoy (PM) <-> Rahul — rate limiter & reconciliation
+      { id: 'msg1', conv: 'u1:u2', from: 'u1', to: 'u2', text: 'Hey Rahul, can you take a look at the rate limiter issue? Legit bulk pulls are getting 429s during off-peak.', date: isoDaysFromNow(-2), time: '10:12', read: true },
+      { id: 'msg2', conv: 'u1:u2', from: 'u2', to: 'u1', text: 'On it — the token bucket refill looks too aggressive. I will patch it today.', date: isoDaysFromNow(-2), time: '10:40', read: true },
+      { id: 'msg3', conv: 'u1:u2', from: 'u1', to: 'u2', text: 'Great. Also the reconciliation report times out past 50k records — please chunk the processing.', date: isoDaysFromNow(-2), time: '17:02', read: true },
+      { id: 'msg4', conv: 'u1:u2', from: 'u2', to: 'u1', text: 'Rate limiter fix is ready for review. Chunked reconciliation is done too.', date: isoDaysFromNow(-1), time: '09:24', read: true },
+      { id: 'msg5', conv: 'u1:u2', from: 'u2', to: 'u1', text: 'Morning Ajoy — API key rotation is next on my list, should be wrapped by Friday.', date: isoDaysFromNow(0), time: '08:31', read: false },
+
+      // Ajoy (PM) <-> Arun — session/token work & email headers
+      { id: 'msg6', conv: 'u1:u3', from: 'u3', to: 'u1', text: 'Session & token management is at 65%. Pushed the JWT rotation branch for review.', date: isoDaysFromNow(-1), time: '15:10', read: false },
+      { id: 'msg7', conv: 'u1:u3', from: 'u1', to: 'u3', text: 'Looks good. Add SPF/DKIM headers to the reset emails too — they are landing in spam.', date: isoDaysFromNow(-1), time: '15:35', read: true },
+      { id: 'msg8', conv: 'u1:u3', from: 'u3', to: 'u1', text: 'Done — headers verified and the "password reset lands in spam" issue is resolved.', date: isoDaysFromNow(0), time: '11:02', read: false },
+
+      // Ajoy (PM) <-> Rohan — password reset flow
+      { id: 'msg9', conv: 'u1:u4', from: 'u4', to: 'u1', text: 'Password reset flow is at 30% — the OTP form is ready, email template still needs the DKIM fix.', date: isoDaysFromNow(-1), time: '16:20', read: true },
+      { id: 'msg10', conv: 'u1:u4', from: 'u4', to: 'u1', text: 'The 2FA edge case is handled too. Submitting Password Reset Flow for review shortly.', date: isoDaysFromNow(0), time: '09:47', read: true },
+
+      // Rahul <-> Arun — dev to dev
+      { id: 'msg11', conv: 'u2:u3', from: 'u2', to: 'u3', text: 'Arun, the rate limiter change is up — can you sanity check the bucket refill config?', date: isoDaysFromNow(-1), time: '13:41', read: true },
+      { id: 'msg12', conv: 'u2:u3', from: 'u3', to: 'u2', text: 'Sure — looks correct. Just bump the capacity constant and the token bucket math checks out.', date: isoDaysFromNow(-1), time: '14:05', read: true },
+      { id: 'msg13', conv: 'u2:u3', from: 'u3', to: 'u2', text: 'FYI the chunked reconciliation processor is ready for you to test against the 50k batch.', date: isoDaysFromNow(0), time: '12:18', read: false },
+    ],
   };
 }

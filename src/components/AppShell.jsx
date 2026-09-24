@@ -6,16 +6,19 @@ import DevDock from './DevDock.jsx';
 import { appsForRole } from '../data/dockConfig.js';
 import { useApp } from '../data/context.js';
 import PMDashboard from '../pm/Dashboard.jsx';
+import DevDashboard from '../dashboard/DevDashboard.jsx';
 import PTDApp from '../pm/PTDApp.jsx';
 import Projects from '../pm/Projects.jsx';
 import WorkOrders from '../workorders/WorkOrders.jsx';
+import DevWorkOrders from '../workorders/DevWorkOrders.jsx';
 import Files from '../files/Files.jsx';
 import Issues from '../issues/Issues.jsx';
 import Calendar from '../calendar/Calendar.jsx';
 import Reports from '../reports/Reports.jsx';
+import Notifications from '../notifications/Notifications.jsx';
+import Chat from '../chat/Chat.jsx';
 import Placeholder from '../views/Placeholder.jsx';
 
-const HOME = '/app/dashboard';
 const THEME_KEY = 'system-soft:theme';
 
 function getClock() {
@@ -81,10 +84,11 @@ export default function AppShell({ initialApp = 'dashboard' }) {
     app.name.toLowerCase().includes(query.trim().toLowerCase()),
   );
   const unread = (db.notifications || []).filter((n) => !n.read).length;
+  const chatUnread = (db.messages || []).filter((m) => m.to === currentUser?.id && !m.read).length;
 
   const renderView = () => {
     if (activeApp === 'dashboard') {
-      return <PMDashboard dark={dark} />;
+      return role === 'dev' ? <DevDashboard key={navCount} dark={dark} /> : <PMDashboard key={navCount} dark={dark} />;
     }
     if (activeApp === 'ptds' && role !== 'dev') {
       return <PTDApp key={navCount} dark={dark} />;
@@ -93,7 +97,11 @@ export default function AppShell({ initialApp = 'dashboard' }) {
       return <Projects key={navCount} dark={dark} />;
     }
     if (activeApp === 'workorders') {
-      return <WorkOrders key={navCount} dark={dark} />;
+      return role === 'dev' ? (
+        <DevWorkOrders key={navCount} dark={dark} />
+      ) : (
+        <WorkOrders key={navCount} dark={dark} />
+      );
     }
     if (activeApp === 'files') {
       return <Files key={navCount} dark={dark} />;
@@ -106,6 +114,12 @@ export default function AppShell({ initialApp = 'dashboard' }) {
     }
     if (activeApp === 'reports' && role !== 'dev') {
       return <Reports key={navCount} dark={dark} />;
+    }
+    if (activeApp === 'notifications') {
+      return <Notifications key={navCount} dark={dark} />;
+    }
+    if (activeApp === 'chat') {
+      return <Chat key={navCount} dark={dark} />;
     }
     return <Placeholder title={active.name} icon={active.icon} dark={dark} key={active.id} />;
   };
@@ -154,15 +168,15 @@ export default function AppShell({ initialApp = 'dashboard' }) {
             <span className={`hidden sm:inline text-[10px] ${contentOn}`}>{ROLE_LABELS[role] || role}</span>
           </div>
           <button
-            onClick={() => navigate(HOME, { replace: true })}
+            onClick={() => navigate('/app/notifications')}
             title="Notifications"
             className={`relative rounded-md p-1.5 transition-colors cursor-pointer ${
               dark ? 'hover:bg-zinc-800' : 'hover:bg-zinc-200'
             }`}
           >
-            {unread > 0 && (
+            {unread + chatUnread > 0 && (
               <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-red-500 px-0.5 text-[9px] font-bold text-white">
-                {unread}
+                {unread + chatUnread}
               </span>
             )}
             <Bell className="h-4 w-4" />
@@ -197,6 +211,7 @@ export default function AppShell({ initialApp = 'dashboard' }) {
           activeApp={activeApp}
           showApps={showApps}
           dark={dark}
+          badges={{ chat: chatUnread }}
           onSelectApp={selectApp}
           onToggleApps={() => setShowApps((s) => !s)}
         />
