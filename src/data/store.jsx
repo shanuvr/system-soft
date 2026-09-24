@@ -4,7 +4,7 @@ import { createSeed } from './seed';
 
 const DB_KEY = 'system-soft:db';
 const SESSION_KEY = 'system-soft:session';
-const SEED_VERSION = 13;
+const SEED_VERSION = 15;
 
 function readKey(key) {
   try {
@@ -655,52 +655,6 @@ export function AppProvider({ children }) {
     }));
   };
 
-  const requestWorkOrderFile = (workOrderId, requestData) => {
-    const today = new Date().toISOString().slice(0, 10);
-    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-    const target = db.workOrders.find((w) => w.id === workOrderId);
-    const fileName = (requestData.fileName || '').trim();
-    if (!fileName) return;
-
-    const newRequest = {
-      id: uid('fr'),
-      fileName,
-      reason: requestData.reason?.trim() || '',
-      requestedBy: currentUser?.name || 'User',
-      requestedById: currentUser?.id || null,
-      requestedTo: requestData.requestedTo || 'Project Manager',
-      workOrderId: workOrderId || null,
-      projectId: requestData.projectId || target?.projectId || null,
-      dateRequested: today,
-      requiredDate: requestData.requiredDate || '',
-      status: 'requested',
-    };
-
-    setDb((prev) => ({
-      ...prev,
-      fileRequests: [newRequest, ...(prev.fileRequests || [])],
-      notifications: [
-        {
-          id: uid('n'),
-          title: `File request: "${fileName}" requested for "${target?.title || 'Work Order'}"`,
-          read: false,
-        },
-        ...(prev.notifications || []),
-      ],
-      activity: [
-        {
-          id: uid('a'),
-          date: today,
-          time,
-          actor: currentUser?.name || 'User',
-          projectId: target?.projectId,
-          text: `requested file "${fileName}" for "${target?.title || 'a work order'}"`,
-        },
-        ...(prev.activity || []),
-      ],
-    }));
-  };
-
   const addFile = (fileData) => {
     const today = new Date().toISOString().slice(0, 10);
     const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -716,10 +670,11 @@ export function AppProvider({ children }) {
       projectId: fileData.projectId || null,
       ptdId: fileData.ptdId || null,
       workOrderId: fileData.workOrderId || null,
-      uploadedBy: currentUser?.name || 'User',
+      uploadedBy: fileData.uploadedBy || currentUser?.name || 'User',
       date: today,
-      version: 1,
-      source: 'manual',
+      version: fileData.version || 1,
+      source: fileData.source || 'manual',
+      orderId: fileData.orderId || null,
     };
 
     setDb((prev) => ({
@@ -739,85 +694,98 @@ export function AppProvider({ children }) {
     }));
   };
 
-  const updateFileRequest = (requestId, status, fileData = {}) => {
+  const deleteFile = (id) => {
+    setDb((prev) => ({
+      ...prev,
+      files: (prev.files || []).filter((f) => f.id !== id),
+    }));
+  };
+
+  const reportIssue = (data) => {
     const today = new Date().toISOString().slice(0, 10);
     const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-    const request = db.fileRequests?.find((r) => r.id === requestId);
-    if (!request) return;
+    const project = db.projects.find((p) => p.id === data.projectId);
+    const dev = db.users.find((u) => u.id === data.assignedTo);
+    const title = (data.title || '').trim();
+    if (!title) return;
+
+    const newIssue = {
+      id: uid('iss'),
+      projectId: data.projectId || null,
+      workOrderId: data.workOrderId || null,
+      title,
+      category: data.category || 'Functional',
+      priority: data.priority || 'medium',
+      description: (data.description || '').trim(),
+      screenshot: data.screenshot || null,
+      screenshotName: data.screenshotName || '',
+      reportedBy: currentUser?.name || 'User',
+      reportedById: currentUser?.id || null,
+      assignedTo: data.assignedTo || 'u2',
+      status: 'open',
+      dateReported: today,
+      timeReported: time,
+      resolution: '',
+    };
+
+    setDb((prev) => ({
+      ...prev,
+      issues: [newIssue, ...(prev.issues || [])],
+      notifications: [
+        {
+          id: uid('n'),
+          title: `New issue "${newIssue.title}" assigned to ${dev?.name || 'a developer'}${project ? ` in ${project.name}` : ''}`,
+          read: false,
+        },
+        ...(prev.notifications || []),
+      ],
+      activity: [
+        {
+          id: uid('a'),
+          date: today,
+          time,
+          actor: currentUser?.name || 'User',
+          projectId: newIssue.projectId,
+          text: `reported issue "${newIssue.title}"`,
+        },
+        ...(prev.activity || []),
+      ],
+    }));
+  };
+
+  const updateIssueStatus = (id, status, note = '') => {
+    const today = new Date().toISOString().slice(0, 10);
+    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
 
     setDb((prev) => {
-      const project = prev.projects.find((p) => p.id === request.projectId);
-      const target = prev.workOrders.find((w) => w.id === request.workOrderId);
-
-      if (status === 'uploaded') {
-        const name = fileData.name?.trim() || request.fileName;
-        const newFile = {
-          id: uid('f'),
-          name,
-          type: fileData.type || 'Document',
-          size: fileData.size?.trim() || '—',
-          client: project?.client || '',
-          projectId: request.projectId,
-          ptdId: target?.ptdId || null,
-          workOrderId: request.workOrderId,
-          uploadedBy: currentUser?.name || 'User',
-          date: today,
-          version: 1,
-          source: 'manual',
-        };
-        return {
-          ...prev,
-          files: [newFile, ...(prev.files || [])],
-          fileRequests: (prev.fileRequests || []).map((r) =>
-            r.id === requestId ? { ...r, status: 'uploaded', resolvedDate: today, fileName: name } : r,
-          ),
-          notifications: [
-            {
-              id: uid('n'),
-              title: `File "${name}" uploaded and marked for "${request.requestedBy}"`,
-              read: false,
-            },
-            ...(prev.notifications || []),
-          ],
-          activity: [
-            {
-              id: uid('a'),
-              date: today,
-              time,
-              actor: currentUser?.name || 'User',
-              projectId: request.projectId,
-              text: `uploaded "${name}" to fulfil ${request.requestedBy}'s file request`,
-            },
-            ...(prev.activity || []),
-          ],
-        };
-      }
-
+      const target = (prev.issues || []).find((i) => i.id === id);
+      if (!target) return prev;
       return {
         ...prev,
-        fileRequests: (prev.fileRequests || []).map((r) =>
-          r.id === requestId ? { ...r, status: 'received', resolvedDate: today } : r,
+        issues: (prev.issues || []).map((i) =>
+          i.id === id ? { ...i, status, resolution: note.trim() || i.resolution } : i,
         ),
+        notifications: [
+          {
+            id: uid('n'),
+            title: `Issue "${target.title}" marked as ${status.replaceAll('-', ' ')} by ${currentUser?.name || 'User'}`,
+            read: false,
+          },
+          ...(prev.notifications || []),
+        ],
         activity: [
           {
             id: uid('a'),
             date: today,
             time,
             actor: currentUser?.name || 'User',
-            projectId: request.projectId,
-            text: `confirmed receipt of "${request.fileName}"`,
+            projectId: target.projectId,
+            text: `marked issue "${target.title}" as ${status.replaceAll('-', ' ')}`,
           },
           ...(prev.activity || []),
         ],
       };
     });
-  };
-
-  const deleteFile = (id) => {
-    setDb((prev) => ({
-      ...prev,
-      files: (prev.files || []).filter((f) => f.id !== id),
-    }));
   };
 
   return (
@@ -848,10 +816,10 @@ export function AppProvider({ children }) {
         resolveBlocker,
         logHours,
         addWorkOrderFile,
-        requestWorkOrderFile,
         addFile,
-        updateFileRequest,
         deleteFile,
+        reportIssue,
+        updateIssueStatus,
       }}
     >
       {children}

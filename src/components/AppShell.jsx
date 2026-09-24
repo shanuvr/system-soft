@@ -9,6 +9,10 @@ import PMDashboard from '../pm/Dashboard.jsx';
 import PTDApp from '../pm/PTDApp.jsx';
 import Projects from '../pm/Projects.jsx';
 import WorkOrders from '../workorders/WorkOrders.jsx';
+import Files from '../files/Files.jsx';
+import Issues from '../issues/Issues.jsx';
+import Calendar from '../calendar/Calendar.jsx';
+import Reports from '../reports/Reports.jsx';
 import Placeholder from '../views/Placeholder.jsx';
 
 const HOME = '/app/dashboard';
@@ -90,6 +94,18 @@ export default function AppShell({ initialApp = 'dashboard' }) {
     }
     if (activeApp === 'workorders') {
       return <WorkOrders key={navCount} dark={dark} />;
+    }
+    if (activeApp === 'files') {
+      return <Files key={navCount} dark={dark} />;
+    }
+    if (activeApp === 'issues') {
+      return <Issues key={navCount} dark={dark} />;
+    }
+    if (activeApp === 'calendar') {
+      return <Calendar key={navCount} dark={dark} />;
+    }
+    if (activeApp === 'reports' && role !== 'dev') {
+      return <Reports key={navCount} dark={dark} />;
     }
     return <Placeholder title={active.name} icon={active.icon} dark={dark} key={active.id} />;
   };
