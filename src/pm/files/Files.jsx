@@ -11,7 +11,7 @@ import {
   Trash2,
   Upload,
 } from 'lucide-react';
-import { useApp } from '../data/context.js';
+import { useApp } from '../../data/context.js';
 import FileUploadModal from './FileUploadModal.jsx';
 
 const TYPE_META = {

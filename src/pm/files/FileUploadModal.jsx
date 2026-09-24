@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FileText, FolderOpen, Tag, Upload, X } from 'lucide-react';
-import { useApp } from '../data/context.js';
+import { useApp } from '../../data/context.js';
 
 const FILE_TYPES = [
   'Logo',

@@ -23,15 +23,15 @@ import {
   AreaChart,
   Area,
 } from 'recharts';
-import { useApp } from '../data/context.js';
+import { useApp } from '../../data/context.js';
 import {
   statusCounts,
   hoursTrend,
   summarizeWorkOrders,
   daysUntil,
-} from '../dashboard/dashboardData.js';
-import { axisProps, gridProps } from '../dashboard/chartTheme.js';
-import { ChartCard, Legend, ChartTooltip } from '../dashboard/ChartBits.jsx';
+} from './dashboardData.js';
+import { axisProps, gridProps } from './chartTheme.js';
+import { ChartCard, Legend, ChartTooltip } from './ChartBits.jsx';
 
 function StatCard({ label, value, sub, icon: Icon, dark, accent = 'text-violet-500' }) {
   const on = dark ? 'border-zinc-800 bg-zinc-900/70' : 'border-zinc-200 bg-white/80';

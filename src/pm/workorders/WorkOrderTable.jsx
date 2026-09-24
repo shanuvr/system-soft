@@ -7,7 +7,7 @@ import {
   ChevronUp,
   MessageSquare,
 } from 'lucide-react';
-import { PriorityBadge, WoStatusBadge } from '../pm/badges.jsx';
+import { PriorityBadge, WoStatusBadge } from '../badges.jsx';
 
 function daysUntil(iso) {
   if (!iso) return null;

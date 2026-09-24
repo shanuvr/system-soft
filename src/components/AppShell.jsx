@@ -5,18 +5,27 @@ import PMDock from './PMDock.jsx';
 import DevDock from './DevDock.jsx';
 import { appsForRole } from '../data/dockConfig.js';
 import { useApp } from '../data/context.js';
+// PM views
 import PMDashboard from '../pm/Dashboard.jsx';
-import DevDashboard from '../dashboard/DevDashboard.jsx';
-import PTDApp from '../pm/PTDApp.jsx';
 import Projects from '../pm/Projects.jsx';
-import WorkOrders from '../workorders/WorkOrders.jsx';
-import DevWorkOrders from '../workorders/DevWorkOrders.jsx';
-import Files from '../files/Files.jsx';
-import Issues from '../issues/Issues.jsx';
-import Calendar from '../calendar/Calendar.jsx';
-import Reports from '../reports/Reports.jsx';
-import Notifications from '../notifications/Notifications.jsx';
-import Chat from '../chat/Chat.jsx';
+import PTDApp from '../pm/PTDApp.jsx';
+import PMWorkOrders from '../pm/workorders/WorkOrders.jsx';
+import PMFiles from '../pm/files/Files.jsx';
+import PMIssues from '../pm/issues/Issues.jsx';
+import PMCalendar from '../pm/calendar/Calendar.jsx';
+import PMReports from '../pm/reports/Reports.jsx';
+import PMNotifications from '../pm/notifications/Notifications.jsx';
+import PMChat from '../pm/chat/Chat.jsx';
+
+// Dev views
+import DevDashboard from '../dev/dashboard/DevDashboard.jsx';
+import DevWorkOrders from '../dev/workorders/DevWorkOrders.jsx';
+import DevFiles from '../dev/files/DevFiles.jsx';
+import DevIssues from '../dev/issues/DevIssues.jsx';
+import DevCalendar from '../dev/calendar/DevCalendar.jsx';
+import DevNotifications from '../dev/notifications/DevNotifications.jsx';
+import DevChat from '../dev/chat/DevChat.jsx';
+
 import Placeholder from '../views/Placeholder.jsx';
 
 const THEME_KEY = 'system-soft:theme';
@@ -100,26 +109,26 @@ export default function AppShell({ initialApp = 'dashboard' }) {
       return role === 'dev' ? (
         <DevWorkOrders key={navCount} dark={dark} />
       ) : (
-        <WorkOrders key={navCount} dark={dark} />
+        <PMWorkOrders key={navCount} dark={dark} />
       );
     }
     if (activeApp === 'files') {
-      return <Files key={navCount} dark={dark} />;
+      return role === 'dev' ? <DevFiles key={navCount} dark={dark} /> : <PMFiles key={navCount} dark={dark} />;
     }
     if (activeApp === 'issues') {
-      return <Issues key={navCount} dark={dark} />;
+      return role === 'dev' ? <DevIssues key={navCount} dark={dark} /> : <PMIssues key={navCount} dark={dark} />;
     }
     if (activeApp === 'calendar') {
-      return <Calendar key={navCount} dark={dark} />;
+      return role === 'dev' ? <DevCalendar key={navCount} dark={dark} /> : <PMCalendar key={navCount} dark={dark} />;
     }
     if (activeApp === 'reports' && role !== 'dev') {
-      return <Reports key={navCount} dark={dark} />;
+      return <PMReports key={navCount} dark={dark} />;
     }
     if (activeApp === 'notifications') {
-      return <Notifications key={navCount} dark={dark} />;
+      return role === 'dev' ? <DevNotifications key={navCount} dark={dark} /> : <PMNotifications key={navCount} dark={dark} />;
     }
     if (activeApp === 'chat') {
-      return <Chat key={navCount} dark={dark} />;
+      return role === 'dev' ? <DevChat key={navCount} dark={dark} /> : <PMChat key={navCount} dark={dark} />;
     }
     return <Placeholder title={active.name} icon={active.icon} dark={dark} key={active.id} />;
   };

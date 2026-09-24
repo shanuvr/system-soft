@@ -32,9 +32,9 @@ import {
   workloadByDev,
   hoursTrend,
   daysUntil,
-} from '../dashboard/dashboardData.js';
-import { axisProps, gridProps } from '../dashboard/chartTheme.js';
-import { ChartCard, Legend, ChartTooltip } from '../dashboard/ChartBits.jsx';
+} from './dashboard/dashboardData.js';
+import { axisProps, gridProps } from './dashboard/chartTheme.js';
+import { ChartCard, Legend, ChartTooltip } from './dashboard/ChartBits.jsx';
 
 function StatCard({ label, value, sub, icon: Icon, dark, accent = 'text-violet-500' }) {
   const on = dark ? 'border-zinc-800 bg-zinc-900/70' : 'border-zinc-200 bg-white/80';

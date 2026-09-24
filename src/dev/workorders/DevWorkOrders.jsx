@@ -7,8 +7,8 @@ import {
   ListTodo,
   Timer,
 } from 'lucide-react';
-import { useApp } from '../data/context.js';
-import { PriorityBadge, WoStatusBadge } from '../pm/badges.jsx';
+import { useApp } from '../../data/context.js';
+import { PriorityBadge, WoStatusBadge } from './badges.jsx';
 import DevWorkOrderDetail from './DevWorkOrderDetail.jsx';
 
 function daysUntil(iso) {

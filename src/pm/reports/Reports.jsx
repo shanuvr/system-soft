@@ -8,9 +8,9 @@ import {
   Search,
   Timer,
 } from 'lucide-react';
-import { useApp } from '../data/context.js';
-import { WoStatusBadge } from '../pm/badges.jsx';
-import { WO_STATUS_LABELS } from '../pm/ptdMeta.js';
+import { useApp } from '../../data/context.js';
+import { WoStatusBadge } from '../badges.jsx';
+import { WO_STATUS_LABELS } from '../ptdMeta.js';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 

@@ -4,8 +4,8 @@ import {
   Trash2,
   TrendingUp,
 } from 'lucide-react';
-import { PriorityBadge, WoStatusBadge } from '../pm/badges.jsx';
-import { useApp } from '../data/context.js';
+import { PriorityBadge, WoStatusBadge } from '../badges.jsx';
+import { useApp } from '../../data/context.js';
 
 export default function WorkOrderDetailDrawer({
   workOrderId,

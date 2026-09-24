@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, FileImage, FileText, MessageSquare, Paperclip, Search, Send, X } from 'lucide-react';
-import { useApp } from '../data/context.js';
+import { useApp } from '../../data/context.js';
 
 const IMAGE_EXT = /\.(png|jpe?g|gif|webp|svg|bmp|ico)$/i;
 
@@ -72,7 +72,7 @@ function AttachmentChip({ attachment, mine, dark }) {
   );
 }
 
-export default function Chat({ dark }) {
+export default function DevChat({ dark }) {
   const { db, currentUser, sendMessage, markConversationRead } = useApp();
   const [activePeerId, setActivePeerId] = useState(null);
   const [query, setQuery] = useState('');

@@ -5,7 +5,7 @@ import {
   Clock,
   User as UserIcon,
 } from 'lucide-react';
-import { PriorityBadge, WoStatusBadge } from '../pm/badges.jsx';
+import { PriorityBadge, WoStatusBadge } from './badges.jsx';
 
 function isDone(wo) {
   return wo.status === 'completed' || wo.status === 'done';

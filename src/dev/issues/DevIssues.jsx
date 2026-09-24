@@ -13,7 +13,7 @@ import {
   User as UserIcon,
   X,
 } from 'lucide-react';
-import { useApp } from '../data/context.js';
+import { useApp } from '../../data/context.js';
 
 const STATUS_META = {
   open: 'bg-rose-500/15 text-rose-400 border border-rose-500/20',
@@ -307,7 +307,7 @@ function ScreenshotLightbox({ src, name, onClose }) {
   );
 }
 
-export default function Issues({ dark }) {
+export default function DevIssues({ dark }) {
   const { db, currentUser, updateIssueStatus } = useApp();
   const role = currentUser?.role || 'pm';
   const isPm = role === 'pm' || role === 'admin';

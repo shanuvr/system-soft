@@ -12,7 +12,7 @@ import {
   User as UserIcon,
   X,
 } from 'lucide-react';
-import { useApp } from '../data/context.js';
+import { useApp } from '../../data/context.js';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 

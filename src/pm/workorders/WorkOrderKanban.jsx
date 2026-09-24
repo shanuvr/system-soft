@@ -7,7 +7,7 @@ import {
   Paperclip,
   MessageSquare,
 } from 'lucide-react';
-import { PriorityBadge } from '../pm/badges.jsx';
+import { PriorityBadge } from '../badges.jsx';
 
 const COLUMN_DEFS = [
   {
