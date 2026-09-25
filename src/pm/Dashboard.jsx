@@ -40,14 +40,17 @@ function StatCard({ label, value, sub, icon: Icon, dark, accent = 'text-violet-5
   const on = dark ? 'border-zinc-800 bg-zinc-900/70' : 'border-zinc-200 bg-white/80';
   const muted = dark ? 'text-zinc-500' : 'text-zinc-500';
   const heading = dark ? 'text-zinc-200' : 'text-zinc-800';
+  const chip = dark ? 'border-zinc-800' : 'border-zinc-200';
   return (
-    <div className={`rounded-2xl border p-4 shadow-sm backdrop-blur-md transition-colors ${on}`}>
-      <div className="flex items-center justify-between gap-3">
-        <span className={`text-xs font-medium tracking-wide ${muted}`}>{label}</span>
+    <div className={`flex items-center gap-3 rounded-2xl border p-2.5 sm:p-3 shadow-sm backdrop-blur-md transition-colors ${on}`}>
+      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${chip}`}>
         <Icon className={`h-4 w-4 ${accent}`} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className={`truncate text-[10px] font-medium uppercase tracking-wide ${muted}`}>{label}</div>
+        <div className={`mt-0.5 text-xl font-bold leading-tight tabular-nums ${heading}`}>{value}</div>
+        <div className={`mt-0.5 truncate text-[10px] ${muted}`}>{sub}</div>
       </div>
-      <div className={`mt-2 text-3xl font-bold tabular-nums ${heading}`}>{value}</div>
-      <div className={`mt-1 text-xs ${muted}`}>{sub}</div>
     </div>
   );
 }
@@ -165,7 +168,7 @@ export default memo(function PMDashboard({ dark }) {
       </div>
 
       {/* KPI cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-2 sm:gap-3 sm:grid-cols-3">
         <StatCard
           dark={dark}
           label="Projects"
