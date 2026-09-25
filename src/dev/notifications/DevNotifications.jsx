@@ -1,16 +1,31 @@
 import { useMemo, useState } from 'react';
-import { Bell, CheckCheck, Search } from 'lucide-react';
+import {
+  Activity,
+  BarChart3,
+  Bell,
+  Bug,
+  CheckCheck,
+  Clock,
+  RefreshCcw,
+  Search,
+  Send,
+  ThumbsUp,
+  UserPlus,
+} from 'lucide-react';
 import { useApp } from '../../data/context.js';
 
-const TYPE_LABELS = {
-  review: 'Submitted for review',
-  approval: 'Approved',
-  changes: 'Changes requested',
-  issue: 'Issue',
-  hours: 'Hours logged',
-  assignment: 'Work order',
-  status: 'Status update',
+const TYPE_META = {
+  assignment: { label: 'New assignment', icon: UserPlus, accent: 'text-violet-500', box: 'bg-violet-500/15 border-violet-500/25' },
+  review: { label: 'Awaiting review', icon: Send, accent: 'text-sky-500', box: 'bg-sky-500/15 border-sky-500/25' },
+  approval: { label: 'Approved', icon: ThumbsUp, accent: 'text-emerald-500', box: 'bg-emerald-500/15 border-emerald-500/25' },
+  changes: { label: 'Changes requested', icon: RefreshCcw, accent: 'text-amber-500', box: 'bg-amber-500/15 border-amber-500/25' },
+  hours: { label: 'Hours logged', icon: Clock, accent: 'text-cyan-500', box: 'bg-cyan-500/15 border-cyan-500/25' },
+  issue: { label: 'Issue update', icon: Bug, accent: 'text-rose-500', box: 'bg-rose-500/15 border-rose-500/25' },
+  report: { label: 'Report entry', icon: BarChart3, accent: 'text-violet-500', box: 'bg-violet-500/15 border-violet-500/25' },
+  status: { label: 'Status update', icon: Activity, accent: 'text-zinc-500', box: 'bg-zinc-500/15 border-zinc-500/25' },
 };
+
+const TYPE_DEFAULT = TYPE_META.status;
 
 function fmtGroupLabel(date) {
   if (!date) return 'Unknown';
@@ -68,30 +83,61 @@ export default function DevNotifications({ dark }) {
   const border = dark ? 'border-zinc-800' : 'border-zinc-200';
   const rowHover = dark ? 'hover:bg-zinc-800/50' : 'hover:bg-zinc-50';
   const inputBg = dark
-    ? 'border-zinc-700 bg-zinc-900 text-white placeholder-zinc-500 focus:border-zinc-500'
-    : 'border-zinc-300 bg-white text-zinc-800 placeholder-zinc-400 focus:border-zinc-500';
+    ? 'border-zinc-700 bg-zinc-900 text-white placeholder-zinc-500 focus:border-violet-500'
+    : 'border-zinc-300 bg-white text-zinc-800 placeholder-zinc-400 focus:border-violet-500';
 
   const renderRow = (n) => {
     const project = projectsById[n.projectId];
-    const type = TYPE_LABELS[n.type] || '';
+    const meta = TYPE_META[n.type] || TYPE_DEFAULT;
+    const Icon = meta.icon;
     const unread = !n.read;
+
     return (
       <button
         key={n.id}
         onClick={() => markNotificationRead(n.id)}
         title={unread ? 'Click to mark as read' : ''}
-        className={`flex w-full items-start gap-3 px-1 py-2.5 text-left transition-colors cursor-pointer ${rowHover}`}
+        className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors cursor-pointer ${rowHover} ${
+          unread ? 'border-violet-500/40' : border
+        }`}
       >
-        <span className={`w-12 shrink-0 text-[11px] tabular-nums ${unread ? heading : muted}`}>{n.time || '—'}</span>
+        <span
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${meta.box} ${
+            dark ? 'text-zinc-100' : 'text-zinc-800'
+          }`}
+        >
+          <Icon className={`h-4 w-4 ${meta.accent}`} />
+        </span>
+
         <div className="min-w-0 flex-1">
-          <span className={`block text-xs leading-relaxed ${unread ? `font-semibold ${heading}` : muted}`}>{n.title}</span>
-          <span className={`mt-0.5 block text-[10px] ${muted}`}>
-            {n.date}
-            {project ? ` · ${project.name}` : ''}
-            {type ? ` · ${type}` : ''}
-          </span>
+          <span className={`block text-xs leading-snug ${unread ? `font-semibold ${heading}` : muted}`}>{n.title}</span>
+          <div className={`mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] ${muted}`}>
+            {n.actor && <span className="font-semibold">{n.actor}</span>}
+            {project && (
+              <span className="rounded bg-zinc-500/10 px-1.5 py-0.5 font-semibold">{project.name}</span>
+            )}
+            <span className="flex items-center gap-1">
+              <Icon className={`h-3 w-3 ${meta.accent}`} />
+              {meta.label}
+            </span>
+            {n.workOrderId && (
+              <span className="rounded bg-violet-500/10 px-1.5 py-0.5 font-mono font-bold text-violet-400">
+                {n.workOrderId}
+              </span>
+            )}
+            {n.issueId && (
+              <span className="rounded bg-rose-500/10 px-1.5 py-0.5 font-mono font-bold text-rose-400">
+                {n.issueId}
+              </span>
+            )}
+          </div>
         </div>
-        {unread && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-violet-500" />}
+
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          {n.time && <span className={`text-[11px] font-bold tabular-nums ${unread ? heading : muted}`}>{n.time}</span>}
+          {n.date && <span className={`text-[10px] tabular-nums ${muted}`}>{n.date}</span>}
+          {unread && <span className="mt-0.5 h-2 w-2 rounded-full bg-violet-500" />}
+        </div>
       </button>
     );
   };
@@ -102,7 +148,9 @@ export default function DevNotifications({ dark }) {
         <div>
           <h1 className={`text-2xl font-bold ${heading}`}>Notifications</h1>
           <p className={`mt-1 text-xs ${muted}`}>
-            {unreadCount > 0 ? `${unreadCount} unread` : 'You are all caught up.'}
+            {unreadCount > 0
+              ? `${unreadCount} unread · assignments, reviews and issue updates from your projects`
+              : 'You are all caught up.'}
           </p>
         </div>
         <button
@@ -121,7 +169,7 @@ export default function DevNotifications({ dark }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search notifications..."
-            className={`w-full rounded-xl border pl-8 pr-2 py-1.5 text-xs outline-none ${inputBg}`}
+            className={`w-full rounded-xl border pl-8 pr-2 py-1.5 text-xs outline-none transition-all ${inputBg}`}
           />
         </div>
         <div className="flex items-center gap-1 rounded-xl bg-zinc-500/10 p-1">
@@ -152,16 +200,12 @@ export default function DevNotifications({ dark }) {
         {groups.length > 0 ? (
           groups.map(([label, items]) => (
             <div key={label}>
-              <div className={`flex items-center gap-2 px-1 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-wide ${muted}`}>
+              <div className={`flex items-center gap-2 px-1 pb-2 pt-1 text-[11px] font-semibold uppercase tracking-wide ${muted}`}>
                 {label}
                 <span className={`h-px flex-1 ${border}`} />
               </div>
-              <div className={`mb-2 divide-y ${border}`}>
-                {items.map((n) => (
-                  <div key={n.id} className={`border-b last:border-b-0 ${border}`}>
-                    {renderRow(n)}
-                  </div>
-                ))}
+              <div className="mb-3 space-y-2">
+                {items.map((n) => renderRow(n))}
               </div>
             </div>
           ))

@@ -25,6 +25,7 @@ import DevIssues from '../dev/issues/DevIssues.jsx';
 import DevCalendar from '../dev/calendar/DevCalendar.jsx';
 import DevNotifications from '../dev/notifications/DevNotifications.jsx';
 import DevChat from '../dev/chat/DevChat.jsx';
+import DevReports from '../dev/reports/DevReports.jsx';
 
 import Placeholder from '../views/Placeholder.jsx';
 
@@ -121,8 +122,8 @@ export default function AppShell({ initialApp = 'dashboard' }) {
     if (activeApp === 'calendar') {
       return role === 'dev' ? <DevCalendar key={navCount} dark={dark} /> : <PMCalendar key={navCount} dark={dark} />;
     }
-    if (activeApp === 'reports' && role !== 'dev') {
-      return <PMReports key={navCount} dark={dark} />;
+    if (activeApp === 'reports') {
+      return role === 'dev' ? <DevReports key={navCount} dark={dark} /> : <PMReports key={navCount} dark={dark} />;
     }
     if (activeApp === 'notifications') {
       return role === 'dev' ? <DevNotifications key={navCount} dark={dark} /> : <PMNotifications key={navCount} dark={dark} />;

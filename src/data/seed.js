@@ -6,7 +6,7 @@ function isoDaysFromNow(days) {
 
 export function createSeed() {
   return {
-    _seedVersion: 20,
+    _seedVersion: 21,
 
     users: [
       { id: 'u1', username: 'admin', password: 'admin', name: 'Ajoy Kumar', role: 'pm', title: 'Project Manager' },
@@ -323,6 +323,14 @@ export function createSeed() {
       { id: 'msg11', conv: 'u2:u3', from: 'u2', to: 'u3', text: 'Arun, the rate limiter change is up — can you sanity check the bucket refill config?', date: isoDaysFromNow(-1), time: '13:41', read: true },
       { id: 'msg12', conv: 'u2:u3', from: 'u3', to: 'u2', text: 'Sure — looks correct. Just bump the capacity constant and the token bucket math checks out.', date: isoDaysFromNow(-1), time: '14:05', read: true },
       { id: 'msg13', conv: 'u2:u3', from: 'u3', to: 'u2', text: 'FYI the chunked reconciliation processor is ready for you to test against the 50k batch.', date: isoDaysFromNow(0), time: '12:18', read: false },
+    ],
+
+    reportEntries: [
+      { id: 're1', userId: 'u2', date: isoDaysFromNow(0), time: '11:20', hours: 4, workOrderId: 'WORK-1006', notes: 'Rate limiter now keys on API key + IP and headers verified against the load test.' },
+      { id: 're2', userId: 'u2', date: isoDaysFromNow(-1), time: '16:10', hours: 6, workOrderId: 'WORK-1004', notes: 'Added consumer retry backoff with exponential delay and a dead-letter path.' },
+      { id: 're3', userId: 'u2', date: isoDaysFromNow(-2), time: '17:40', hours: 5, workOrderId: 'WORK-1004', notes: 'Batched message ingestion and fixed the token bucket refill math.' },
+      { id: 're4', userId: 'u3', date: isoDaysFromNow(-1), time: '14:30', hours: 3, workOrderId: 'WORK-1005', notes: 'Chunked the reconciliation report so 50k+ records no longer time out.' },
+      { id: 're5', userId: 'u4', date: isoDaysFromNow(-2), time: '15:05', hours: 4, workOrderId: 'WORK-1008', notes: 'OAuth token refresh no longer drops the session mid-flow.' },
     ],
   };
 }

@@ -35,16 +35,19 @@ import { ChartCard, Legend, ChartTooltip } from './ChartBits.jsx';
 
 function StatCard({ label, value, sub, icon: Icon, dark, accent = 'text-violet-500' }) {
   const on = dark ? 'border-zinc-800 bg-zinc-900/70' : 'border-zinc-200 bg-white/80';
+  const iconBox = dark ? 'border-zinc-700' : 'border-zinc-200';
   const muted = dark ? 'text-zinc-500' : 'text-zinc-500';
   const heading = dark ? 'text-zinc-200' : 'text-zinc-800';
   return (
-    <div className={`rounded-2xl border p-4 shadow-sm backdrop-blur-md transition-colors ${on}`}>
-      <div className="flex items-center justify-between gap-3">
-        <span className={`text-xs font-medium tracking-wide ${muted}`}>{label}</span>
-        <Icon className={`h-4 w-4 ${accent}`} />
+    <div className={`min-w-0 rounded-2xl border p-2 sm:p-3 ${on}`}>
+      <div className="flex items-center justify-between gap-1">
+        <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border ${iconBox}`}>
+          <Icon className={`h-3 w-3 ${accent}`} />
+        </span>
+        <span className={`text-sm font-bold tabular-nums leading-none sm:text-xl ${heading}`}>{value}</span>
       </div>
-      <div className={`mt-2 text-3xl font-bold tabular-nums ${heading}`}>{value}</div>
-      <div className={`mt-1 text-xs ${muted}`}>{sub}</div>
+      <div className={`mt-1 truncate text-[10px] font-bold uppercase ${muted}`}>{label}</div>
+      <div className={`mt-0.5 hidden truncate text-[10px] sm:block ${muted}`}>{sub}</div>
     </div>
   );
 }
@@ -132,10 +135,10 @@ export default memo(function DevDashboard({ dark }) {
       </div>
 
       {/* KPI cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard dark={dark} label="My Work Orders" icon={ListTodo} value={summary.total} sub={`${summary.active} in progress`} />
+      <div className="grid grid-cols-4 gap-2">
+        <StatCard dark={dark} label="Work Orders" icon={ListTodo} value={summary.total} sub={`${summary.active} in progress`} />
         <StatCard dark={dark} label="Completed" icon={CheckCircle2} value={summary.done} sub={`${summary.inReview} awaiting review`} accent="text-emerald-500" />
-        <StatCard dark={dark} label="Hours Spent" icon={Clock} value={`${summary.logged}h`} sub={`of ${summary.est}h estimated`} accent="text-sky-500" />
+        <StatCard dark={dark} label="Hours" icon={Clock} value={`${summary.logged}h`} sub={`of ${summary.est}h estimated`} accent="text-sky-500" />
         <StatCard dark={dark} label="Overdue" icon={AlertTriangle} value={overdue.length} sub={overdue.length ? 'needs attention' : 'all on track'} accent="text-rose-500" />
       </div>
 

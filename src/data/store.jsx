@@ -4,7 +4,7 @@ import { createSeed } from './seed';
 
 const DB_KEY = 'system-soft:db';
 const SESSION_KEY = 'system-soft:session';
-const SEED_VERSION = 20;
+const SEED_VERSION = 21;
 
 function readKey(key) {
   try {
@@ -907,6 +907,58 @@ export function AppProvider({ children }) {
     }));
   };
 
+  const addReportEntry = ({ date, hours, workOrderId, notes }) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    if (!currentUser?.id) return;
+    const entry = {
+      id: uid('re'),
+      userId: currentUser.id,
+      date: date || today,
+      time,
+      hours: Math.max(0, Number(hours) || 0),
+      workOrderId: workOrderId || null,
+      notes: (notes || '').trim(),
+    };
+    if (entry.hours <= 0 && !entry.notes) return;
+    setDb((prev) => {
+      const wo = (prev.workOrders || []).find((w) => w.id === entry.workOrderId) || null;
+      return {
+        ...prev,
+        reportEntries: [entry, ...(prev.reportEntries || [])],
+        notifications: [
+          makeNotification(
+            'report',
+            `${currentUser?.name || 'User'} submitted a daily report (${entry.hours}h)${wo ? ` on "${wo.title}"` : ''}`,
+            { actor: currentUser?.name || 'User', date: today, time, workOrderId: entry.workOrderId || null },
+          ),
+          ...(prev.notifications || []),
+        ],
+        activity: [
+          {
+            id: uid('a'),
+            date: today,
+            time,
+            actor: currentUser?.name || 'User',
+            projectId: wo?.projectId || null,
+            text:
+              entry.hours > 0
+                ? `submitted a daily report entry (${entry.hours}h)${wo ? ` on "${wo.title}"` : ''}`
+                : `submitted a report note${wo ? ` on "${wo.title}"` : ''}`,
+          },
+          ...(prev.activity || []),
+        ],
+      };
+    });
+  };
+
+  const deleteReportEntry = (id) => {
+    setDb((prev) => ({
+      ...prev,
+      reportEntries: (prev.reportEntries || []).filter((e) => e.id !== id),
+    }));
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -943,6 +995,8 @@ export function AppProvider({ children }) {
         markConversationRead,
         markNotificationRead,
         markAllNotificationsRead,
+        addReportEntry,
+        deleteReportEntry,
       }}
     >
       {children}

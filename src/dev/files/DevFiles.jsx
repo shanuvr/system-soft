@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  ChevronDown,
   CreditCard,
   File,
   FileText,
@@ -10,6 +11,7 @@ import {
   ShieldCheck,
   Trash2,
   Upload,
+  X,
 } from 'lucide-react';
 import { useApp } from '../../data/context.js';
 import DevFileUploadModal from './DevFileUploadModal.jsx';
@@ -107,6 +109,16 @@ export default function DevFiles({ dark }) {
   const [selectedId, setSelectedId] = useState(INITIAL_ORDERS[0].id);
   const [query, setQuery] = useState('');
   const [showUpload, setShowUpload] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  useEffect(() => {
+    if (!pickerOpen) return;
+    const onKey = (e) => {
+      if (e.key === 'Escape') setPickerOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [pickerOpen]);
 
   const selected = orders.find((o) => o.id === selectedId) || orders[0];
 
@@ -230,7 +242,110 @@ export default function DevFiles({ dark }) {
             />
           </div>
 
-          <div className="flex max-h-[62vh] flex-col gap-1.5 overflow-y-auto pr-0.5">
+          {/* Mobile: order picker dropdown */}
+          <div className="lg:hidden">
+            <div className="flex items-center justify-between gap-2 pb-2.5">
+              <p className={`text-[11px] ${muted}`}>
+                {orders.length} order{orders.length !== 1 ? 's' : ''} collected
+              </p>
+              <span className="rounded-full bg-violet-500/15 px-2 py-0.5 text-[10px] font-bold text-violet-400 border border-violet-500/20">
+                {selected?.files.length || 0} docs selected
+              </span>
+            </div>
+
+            {pickerOpen && <div className="fixed inset-0 z-40" onClick={() => setPickerOpen(false)} />}
+            <div className="relative z-50">
+              <button
+                type="button"
+                onClick={() => setPickerOpen((o) => !o)}
+                aria-haspopup="listbox"
+                aria-expanded={pickerOpen}
+                className={`flex w-full items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-xs font-semibold outline-none transition-all cursor-pointer ${inputBg} ${
+                  pickerOpen ? 'border-violet-500' : ''
+                }`}
+              >
+                <span className="min-w-0 truncate">
+                  {selected ? `${selected.client} · ${selected.ref} · ${selected.files.length} docs` : 'Select order'}
+                </span>
+                <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${pickerOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {pickerOpen && (
+                <div className={`absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-xl ${panel}`}>
+                  <div className={`relative border-b p-2.5 ${border}`}>
+                    <Search className="pointer-events-none absolute left-5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500" />
+                    <input
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder="Search by client, ref, project..."
+                      className={`w-full rounded-lg border py-1.5 pl-8 pr-7 text-xs outline-none transition-all ${inputBg}`}
+                    />
+                    {query && (
+                      <button
+                        onClick={() => setQuery('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 cursor-pointer"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="max-h-[38vh] overflow-y-auto p-1.5" role="listbox">
+                    {filteredOrders.length === 0 && (
+                      <div className={`py-6 text-center text-xs ${muted}`}>No orders match your search.</div>
+                    )}
+                    {filteredOrders.map((o) => {
+                      const active = selected?.id === o.id;
+                      return (
+                        <button
+                          key={o.id}
+                          role="option"
+                          aria-selected={active}
+                          onClick={() => {
+                            setSelectedId(o.id);
+                            setPickerOpen(false);
+                          }}
+                          className={`flex w-full items-center gap-2.5 rounded-xl border p-2 text-left transition-all cursor-pointer ${
+                            active
+                              ? dark
+                                ? 'border-zinc-600 bg-zinc-800'
+                                : 'border-zinc-900 bg-zinc-100'
+                              : `${border} ${rowHover}`
+                          }`}
+                        >
+                          <span
+                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold ${
+                              active
+                                ? dark
+                                  ? 'bg-zinc-200 text-zinc-900'
+                                  : 'bg-zinc-900 text-white'
+                                : dark
+                                  ? 'bg-zinc-800 text-zinc-200'
+                                  : 'bg-zinc-200 text-zinc-700'
+                            }`}
+                          >
+                            {initials(o.client)}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className={`block truncate text-xs font-semibold ${heading}`}>
+                              {o.client} <span className="font-mono text-[10px] font-bold text-violet-500">{o.ref}</span>
+                            </span>
+                            <span className={`mt-0.5 block truncate text-[10px] ${muted}`}>
+                              {o.files.length} doc{o.files.length !== 1 ? 's' : ''} · {o.orderDate}
+                            </span>
+                          </span>
+                          <OrderStatusChip status={o.status} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Desktop: sidebar list */}
+          <div className="hidden lg:flex lg:max-h-[62vh] lg:flex-col lg:gap-1.5 lg:overflow-y-auto lg:pr-0.5">
             {filteredOrders.map((o) => {
               const active = selected?.id === o.id;
               const docCount = o.files.length;
@@ -332,7 +447,7 @@ export default function DevFiles({ dark }) {
               {/* Documents grid */}
               <div className="mt-4">
                 {selected.files.length > 0 ? (
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  <div className="grid grid-cols-2 gap-3 xl:grid-cols-3">
                     {selected.files.map(renderDocCard)}
                   </div>
                 ) : (

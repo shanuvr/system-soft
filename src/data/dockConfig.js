@@ -31,6 +31,7 @@ export const DEV_APPS = [
   { id: 'files', name: 'Files', icon: Folder },
   { id: 'issues', name: 'Issues', icon: Bug },
   { id: 'calendar', name: 'Calendar', icon: Calendar },
+  { id: 'reports', name: 'Reports', icon: BarChart3 },
   { id: 'notifications', name: 'Notifications', icon: Bell },
 ];
 

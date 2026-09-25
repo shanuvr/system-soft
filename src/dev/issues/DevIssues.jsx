@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
+  AlertCircle,
+  Archive,
   Bug,
   Camera,
   CheckCircle2,
@@ -10,7 +12,9 @@ import {
   Plus,
   RotateCcw,
   Search,
+  Timer,
   User as UserIcon,
+  Wrench,
   X,
 } from 'lucide-react';
 import { useApp } from '../../data/context.js';
@@ -40,6 +44,28 @@ const CATEGORY_META = {
 
 const ISSUE_CATEGORIES = ['Functional', 'UI/UX', 'Performance', 'Security', 'Data', 'Other'];
 const PRIORITIES = ['critical', 'high', 'medium', 'low'];
+const PRIORITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
+
+const STATUS_PILLS = [
+  { id: 'all', label: 'All' },
+  { id: 'open', label: 'Open' },
+  { id: 'in-progress', label: 'In Progress' },
+  { id: 'resolved', label: 'Resolved' },
+  { id: 'closed', label: 'Closed' },
+];
+
+function accentShadow(status) {
+  switch (status) {
+    case 'open':
+      return 'inset 4px 0 0 0 #f43f5e';
+    case 'in-progress':
+      return 'inset 4px 0 0 0 #0ea5e9';
+    case 'resolved':
+      return 'inset 4px 0 0 0 #10b981';
+    default:
+      return 'inset 4px 0 0 0 #71717a';
+  }
+}
 
 function StatusBadge({ status }) {
   return (
@@ -106,10 +132,11 @@ function ReportIssueModal({ dark, onClose, defaultProjectId = '' }) {
 
   const bgPanel = dark ? 'bg-zinc-900 text-zinc-100' : 'bg-white text-zinc-800';
   const borderCls = dark ? 'border-zinc-800' : 'border-zinc-200';
+  const divider = dark ? 'border-zinc-800/60' : 'border-zinc-200';
   const muted = dark ? 'text-zinc-400' : 'text-zinc-500';
   const heading = dark ? 'text-zinc-100' : 'text-zinc-800';
   const inputBg = dark
-    ? 'bg-zinc-850 border-zinc-700 text-white placeholder-zinc-500 focus:border-violet-500'
+    ? 'bg-zinc-900 border-zinc-700 text-white placeholder-zinc-500 focus:border-violet-500'
     : 'bg-white border-zinc-300 text-zinc-800 placeholder-zinc-400 focus:border-violet-500';
   const inputCls = `w-full rounded-xl border px-3.5 py-2.5 text-xs outline-none transition-all ${inputBg}`;
 
@@ -122,14 +149,14 @@ function ReportIssueModal({ dark, onClose, defaultProjectId = '' }) {
         className={`w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-3xl border p-6 shadow-2xl backdrop-blur-xl ${bgPanel} ${borderCls}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between pb-4 border-b border-zinc-800/60 shrink-0">
+        <div className="flex items-center justify-between pb-4 border-b shrink-0" style={{ borderColor: dark ? 'rgba(63,63,70,.6)' : 'rgb(228 228 231)' }}>
           <div className="flex items-center gap-2.5">
             <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${dark ? 'bg-rose-500/15 text-rose-400' : 'bg-rose-100 text-rose-500'}`}>
               <Bug className="h-5 w-5" />
             </div>
             <div>
               <h3 className={`text-base font-bold ${heading}`}>Report an Issue</h3>
-              <p className={`text-xs ${muted}`}>Log a problem found during testing for the assigned developer</p>
+              <p className={`text-xs ${muted}`}>Log a problem you found so it gets fixed</p>
             </div>
           </div>
           <button
@@ -216,7 +243,7 @@ function ReportIssueModal({ dark, onClose, defaultProjectId = '' }) {
             <div className="flex items-start gap-3">
               <label
                 className={`flex w-36 h-24 shrink-0 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed ${
-                  screenshot ? 'border-emerald-500/40 bg-emerald-500/5' : dark ? 'border-zinc-700 bg-zinc-850' : 'border-zinc-300 bg-zinc-50'
+                  screenshot ? 'border-emerald-500/40 bg-emerald-500/5' : dark ? 'border-zinc-700 bg-zinc-900' : 'border-zinc-300 bg-zinc-50'
                 }`}
               >
                 {screenshot ? (
@@ -267,7 +294,7 @@ function ReportIssueModal({ dark, onClose, defaultProjectId = '' }) {
             </p>
           </div>
 
-          <div className="flex justify-end gap-2 pt-3 border-t border-zinc-800/60">
+          <div className={`flex justify-end gap-2 pt-3 border-t ${divider}`}>
             <button
               type="button"
               onClick={onClose}
@@ -283,6 +310,83 @@ function ReportIssueModal({ dark, onClose, defaultProjectId = '' }) {
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+function ResolveIssueModal({ dark, issue, onCancel, onConfirm }) {
+  const [note, setNote] = useState('');
+  const muted = dark ? 'text-zinc-400' : 'text-zinc-500';
+  const heading = dark ? 'text-zinc-100' : 'text-zinc-800';
+  const bgPanel = dark ? 'bg-zinc-900 text-zinc-100' : 'bg-white text-zinc-800';
+  const borderCls = dark ? 'border-zinc-800' : 'border-zinc-200';
+  const inputBg = dark
+    ? 'bg-zinc-900 border-zinc-700 text-white placeholder-zinc-500 focus:border-emerald-500'
+    : 'bg-white border-zinc-300 text-zinc-800 placeholder-zinc-400 focus:border-emerald-500';
+  const active = note.trim().length > 0;
+
+  return (
+    <div
+      className="fixed inset-0 z-60 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+      onClick={onCancel}
+    >
+      <div
+        className={`w-full max-w-md rounded-3xl border p-6 shadow-2xl backdrop-blur-xl ${bgPanel} ${borderCls}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-2.5">
+            <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${dark ? 'bg-emerald-500/15 text-emerald-400' : 'bg-emerald-100 text-emerald-600'}`}>
+              <CheckCircle2 className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <h3 className={`text-base font-bold ${heading}`}>Mark Issue Solved</h3>
+              <p className={`mt-0.5 text-xs leading-snug ${muted}`}>"{issue.title}"</p>
+            </div>
+          </div>
+          <button
+            onClick={onCancel}
+            className={`rounded-xl p-1.5 ${dark ? 'hover:bg-zinc-800 text-zinc-400' : 'hover:bg-zinc-200 text-zinc-600'} cursor-pointer`}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="mt-4">
+          <label className={`block text-xs font-semibold ${heading}`}>What caused it, and how did you fix it? *</label>
+          <textarea
+            autoFocus
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            rows={4}
+            placeholder="e.g. Rate limiter only checked the client IP, not the API key — fixed by keying on (key + IP)."
+            className={`mt-1.5 w-full resize-none rounded-xl border px-3.5 py-2.5 text-xs outline-none transition-all ${inputBg}`}
+          />
+          <p className={`mt-1.5 text-[11px] ${muted}`}>
+            This note is shown to the reporter and saved as the resolution cause.
+          </p>
+        </div>
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            onClick={onCancel}
+            className={`rounded-xl px-4 py-2.5 text-xs font-semibold ${dark ? 'hover:bg-zinc-800 text-zinc-300' : 'hover:bg-zinc-200 text-zinc-600'} cursor-pointer`}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => active && onConfirm(note.trim())}
+            disabled={!active}
+            className={`flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-xs font-semibold text-white transition-all cursor-pointer ${
+              active
+                ? 'bg-emerald-600 shadow-md shadow-emerald-600/30 hover:bg-emerald-500'
+                : 'cursor-not-allowed bg-zinc-600 opacity-50'
+            }`}
+          >
+            <CheckCircle2 className="h-3.5 w-3.5" /> Mark Solved
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -309,8 +413,15 @@ function ScreenshotLightbox({ src, name, onClose }) {
 
 export default function DevIssues({ dark }) {
   const { db, currentUser, updateIssueStatus } = useApp();
-  const role = currentUser?.role || 'pm';
-  const isPm = role === 'pm' || role === 'admin';
+  const meId = currentUser?.id;
+
+  const [showReport, setShowReport] = useState(false);
+  const [resolving, setResolving] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [projectFilter, setProjectFilter] = useState('all');
+  const [mineOnly, setMineOnly] = useState(true);
+  const [query, setQuery] = useState('');
+  const [viewImage, setViewImage] = useState(null);
 
   const issues = useMemo(() => db.issues || [], [db.issues]);
   const projectsById = useMemo(
@@ -326,27 +437,22 @@ export default function DevIssues({ dark }) {
     [db.users],
   );
 
-  const [showReport, setShowReport] = useState(false);
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [projectFilter, setProjectFilter] = useState('all');
-  const [mineOnly, setMineOnly] = useState(role === 'dev');
-  const [query, setQuery] = useState('');
-  const [viewImage, setViewImage] = useState(null);
+  const myIssues = useMemo(() => issues.filter((i) => i.assignedTo === meId), [issues, meId]);
+  const scope = mineOnly ? myIssues : issues;
 
   const counts = useMemo(() => {
     const c = { open: 0, 'in-progress': 0, resolved: 0, closed: 0 };
-    issues.forEach((i) => {
+    scope.forEach((i) => {
       if (c[i.status] !== undefined) c[i.status] += 1;
     });
     return c;
-  }, [issues]);
+  }, [scope]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return issues.filter((i) => {
+    const list = scope.filter((i) => {
       if (statusFilter !== 'all' && i.status !== statusFilter) return false;
       if (projectFilter !== 'all' && i.projectId !== projectFilter) return false;
-      if (mineOnly && i.assignedTo !== currentUser?.id) return false;
       const project = projectsById[i.projectId];
       const wo = workOrdersById[i.workOrderId];
       return (
@@ -357,22 +463,18 @@ export default function DevIssues({ dark }) {
         wo?.title?.toLowerCase().includes(q)
       );
     });
-  }, [issues, statusFilter, projectFilter, mineOnly, query, projectsById, workOrdersById, currentUser]);
-
-  const handleAction = (issue, status) => {
-    if (status === 'resolved') {
-      const note = window.prompt('Resolution note (shown to the reporter):', 'Fixed the root cause.');
-      if (note === null) return;
-      updateIssueStatus(issue.id, 'resolved', note);
-      return;
-    }
-    updateIssueStatus(issue.id, status);
-  };
+    list.sort((a, b) => {
+      const p = (PRIORITY_ORDER[a.priority] ?? 2) - (PRIORITY_ORDER[b.priority] ?? 2);
+      if (p !== 0) return p;
+      return (b.dateReported || '').localeCompare(a.dateReported || '');
+    });
+    return list;
+  }, [scope, statusFilter, projectFilter, query, projectsById, workOrdersById]);
 
   const panel = dark ? 'border-zinc-800 bg-zinc-900/70' : 'border-zinc-200 bg-white/80';
-  const heading = dark ? 'text-zinc-200' : 'text-zinc-800';
-  const muted = dark ? 'text-zinc-500' : 'text-zinc-500';
-  const border = dark ? 'border-zinc-800' : 'border-zinc-200';
+  const cardBorder = dark ? 'border-zinc-800' : 'border-zinc-200';
+  const heading = dark ? 'text-zinc-100' : 'text-zinc-800';
+  const muted = dark ? 'text-zinc-400' : 'text-zinc-500';
   const inputBg = dark
     ? 'border-zinc-700 bg-zinc-900 text-white placeholder-zinc-500 focus:border-violet-500'
     : 'border-zinc-300 bg-white text-zinc-800 placeholder-zinc-400 focus:border-violet-500';
@@ -385,62 +487,70 @@ export default function DevIssues({ dark }) {
       .slice(0, 2)
       .toUpperCase();
 
-  const statusChip = (label, value) => (
-    <button
-      key={value}
-      onClick={() => setStatusFilter(value)}
-      className={`rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition-all cursor-pointer ${
-        statusFilter === value
-          ? dark
-            ? 'bg-zinc-200 text-zinc-900'
-            : 'bg-zinc-900 text-white'
-          : `${dark ? 'text-zinc-400 hover:text-zinc-200' : 'text-zinc-600 hover:text-zinc-900'}`
-      }`}
-    >
-      {label}
-      <span className={`ml-1 text-[10px] ${statusFilter === value ? (dark ? 'text-zinc-600' : 'text-zinc-400') : muted}`}>
-        {value === 'all' ? issues.length : counts[value]}
-      </span>
-    </button>
-  );
+  const kpis = [
+    { id: 'open', label: 'Open', value: counts.open, icon: AlertCircle, accent: 'text-rose-500', sub: 'waiting on you' },
+    { id: 'in-progress', label: 'Fixing', value: counts['in-progress'], icon: Timer, accent: 'text-sky-500', sub: 'in progress' },
+    { id: 'resolved', label: 'Resolved', value: counts.resolved, icon: CheckCircle2, accent: 'text-emerald-500', sub: 'fixed' },
+    { id: 'closed', label: 'Closed', value: counts.closed, icon: Archive, accent: 'text-zinc-500', sub: 'confirmed' },
+  ];
 
   return (
-    <div className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6">
+    <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 pb-6 sm:px-6">
       {/* Header */}
-      <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className={`text-2xl font-bold ${heading}`}>Issues</h1>
           <p className={`mt-1 text-xs ${muted}`}>
-            Report bugs and quality problems found during testing. Each issue goes to its assigned developer.
+            Bugs and quality problems that need fixing. Start on an issue, then mark it solved with the cause.
           </p>
         </div>
-        <button
-          onClick={() => setShowReport(true)}
-          className="flex w-fit items-center gap-1.5 rounded-xl bg-violet-600 px-3 py-2 text-xs font-semibold text-white shadow-md shadow-violet-600/30 transition-all cursor-pointer hover:bg-violet-500 active:scale-95"
-        >
-          <Plus className="h-4 w-4" />
-          Report Issue
-        </button>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {counts.open > 0 && (
+            <span className="flex items-center gap-1.5 rounded-lg bg-rose-500/15 px-2.5 py-1.5 text-[11px] font-bold text-rose-400">
+              <AlertCircle className="h-3.5 w-3.5" /> {counts.open} open
+            </span>
+          )}
+          <button
+            onClick={() => setShowReport(true)}
+            className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-[11px] font-semibold text-white shadow-md shadow-violet-600/30 transition-all cursor-pointer hover:bg-violet-500 active:scale-95"
+          >
+            <Plus className="h-3.5 w-3.5" /> Report Issue
+          </button>
+        </div>
       </div>
 
-      {/* Status filters */}
-      <div className={`mb-4 flex flex-wrap items-center gap-2 ${border} rounded-xl p-1`}>
-        {statusChip('All', 'all')}
-        {statusChip('Open', 'open')}
-        {statusChip('In Progress', 'in-progress')}
-        {statusChip('Resolved', 'resolved')}
-        {statusChip('Closed', 'closed')}
+      {/* KPI strip */}
+      <div className="grid grid-cols-4 gap-2">
+        {kpis.map((k) => {
+          const active = statusFilter === k.id;
+          return (
+            <button
+              key={k.id}
+              onClick={() => setStatusFilter(active ? 'all' : k.id)}
+              className={`min-w-0 rounded-2xl border p-2 text-left transition-all cursor-pointer sm:p-3 ${panel} ${active ? 'border-violet-500/50' : cardBorder}`}
+            >
+              <div className="flex items-center justify-between gap-1">
+                <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border ${cardBorder}`}>
+                  <k.icon className={`h-3 w-3 ${k.accent}`} />
+                </span>
+                <span className={`text-sm font-bold tabular-nums leading-none sm:text-xl ${heading}`}>{k.value}</span>
+              </div>
+              <div className={`mt-1 truncate text-[10px] font-bold uppercase ${muted}`}>{k.label}</div>
+              <div className={`mt-0.5 hidden truncate text-[10px] sm:block ${muted}`}>{k.sub}</div>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Toolbar */}
-      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="relative flex-1 min-w-[240px]">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+      {/* Search + filters */}
+      <div className="mt-4 flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative min-w-0 flex-1 lg:max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search issues..."
-            className={`w-full rounded-xl border pl-9 pr-8 py-2 text-xs outline-none ${inputBg}`}
+            placeholder="Search by title, project, work order..."
+            className={`w-full rounded-xl border py-2 pl-9 pr-8 text-xs outline-none transition-all ${inputBg}`}
           />
           {query && (
             <button
@@ -451,11 +561,35 @@ export default function DevIssues({ dark }) {
             </button>
           )}
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap gap-1">
+            {STATUS_PILLS.map((s) => {
+              const count = s.id === 'all' ? scope.length : counts[s.id] || 0;
+              const active = statusFilter === s.id;
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => setStatusFilter(s.id)}
+                  className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
+                    active
+                      ? 'bg-violet-600 text-white'
+                      : dark
+                      ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                      : 'bg-zinc-200/80 text-zinc-600 hover:bg-zinc-300'
+                  }`}
+                >
+                  {s.label}
+                  <span className={`tabular-nums text-[10px] ${active ? 'text-white/70' : 'opacity-60'}`}>{count}</span>
+                </button>
+              );
+            })}
+          </div>
+
           <select
             value={projectFilter}
             onChange={(e) => setProjectFilter(e.target.value)}
-            className={`rounded-xl border px-3 py-2 text-xs font-semibold outline-none cursor-pointer ${inputBg}`}
+            className={`rounded-xl border px-3 py-2 text-xs outline-none cursor-pointer ${inputBg}`}
           >
             <option value="all">All Projects</option>
             {(db.projects || []).map((p) => (
@@ -464,12 +598,13 @@ export default function DevIssues({ dark }) {
               </option>
             ))}
           </select>
+
           <button
             onClick={() => setMineOnly((m) => !m)}
             className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-colors cursor-pointer ${
               mineOnly
                 ? 'border-violet-500 bg-violet-500/10 text-violet-400'
-                : `${border} ${dark ? 'text-zinc-400 hover:text-zinc-200' : 'text-zinc-600 hover:text-zinc-900'}`
+                : `${cardBorder} ${dark ? 'text-zinc-400 hover:text-zinc-200' : 'text-zinc-600 hover:text-zinc-900'}`
             }`}
           >
             <UserIcon className="h-3.5 w-3.5" />
@@ -479,117 +614,141 @@ export default function DevIssues({ dark }) {
       </div>
 
       {/* Issue list */}
-      <div className="space-y-3">
+      <div className="mt-4 space-y-2.5">
+        {filtered.length === 0 && (
+          <div className={`rounded-2xl border py-16 text-center ${panel}`}>
+            {scope.length === 0 ? (
+              <>
+                <Bug className={`mx-auto h-10 w-10 ${muted}`} />
+                <p className={`mt-3 text-sm font-semibold ${heading}`}>
+                  {mineOnly ? 'No issues assigned to you yet' : 'No issues yet'}
+                </p>
+                <p className={`mt-1 text-xs ${muted}`}>Bugs reported for your projects will show up here.</p>
+              </>
+            ) : (
+              <>
+                <Search className={`mx-auto h-10 w-10 ${muted}`} />
+                <p className={`mt-3 text-sm font-semibold ${heading}`}>No issues match your filters</p>
+                <p className={`mt-1 text-xs ${muted}`}>Try a different search term, project, or status.</p>
+              </>
+            )}
+          </div>
+        )}
+
         {filtered.map((issue) => {
           const project = projectsById[issue.projectId];
           const wo = workOrdersById[issue.workOrderId];
           const assignee = usersById[issue.assignedTo];
           const catCls = CATEGORY_META[issue.category] || CATEGORY_META.Other;
-          const isMine = issue.assignedTo === currentUser?.id;
+          const isMine = issue.assignedTo === meId;
 
           return (
-            <div key={issue.id} className={`rounded-2xl border p-3 sm:p-4 ${panel}`}>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-                {/* Screenshot / category tile */}
-                {issue.screenshot ? (
-                  <button
-                    onClick={() => setViewImage({ src: issue.screenshot, name: issue.screenshotName })}
-                    className="h-12 w-16 shrink-0 overflow-hidden rounded-xl border border-zinc-800 cursor-pointer sm:h-20 sm:w-28"
-                  >
-                    <img src={issue.screenshot} alt={issue.screenshotName || 'Issue screenshot'} className="h-full w-full object-cover" />
-                  </button>
-                ) : (
-                  <div className={`flex h-12 w-16 shrink-0 items-center justify-center rounded-xl border sm:h-20 sm:w-28 ${catCls}`}>
-                    <Bug className="h-4 w-4 sm:h-7 sm:w-7" />
-                  </div>
-                )}
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className={`text-sm font-semibold ${heading}`}>{issue.title}</span>
+            <div
+              key={issue.id}
+              style={{ boxShadow: accentShadow(issue.status) }}
+              className={`rounded-2xl border p-3 ${panel}`}
+            >
+              <div className="flex flex-col gap-2">
+                {/* Top row: title + badges + screenshot */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
+                    <span className={`min-w-0 text-sm font-bold leading-snug ${heading}`}>{issue.title}</span>
                     <StatusBadge status={issue.status} />
                     <PriorityBadge priority={issue.priority} />
                     <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${catCls}`}>
                       {issue.category}
                     </span>
                   </div>
-
-                  <p className={`mt-1.5 text-xs leading-relaxed ${muted}`}>{issue.description}</p>
-
-                  {issue.status === 'resolved' && issue.resolution && (
-                    <div className={`mt-2 rounded-xl border p-2.5 text-[11px] ${dark ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300' : 'border-emerald-500/30 bg-emerald-500/5 text-emerald-700'}`}>
-                      <span className="font-semibold">How it was fixed:</span> {issue.resolution}
+                  {issue.screenshot ? (
+                    <button
+                      onClick={() => setViewImage({ src: issue.screenshot, name: issue.screenshotName })}
+                      className="h-10 w-14 shrink-0 overflow-hidden rounded-lg border border-zinc-700 cursor-pointer"
+                    >
+                      <img src={issue.screenshot} alt={issue.screenshotName || 'Issue screenshot'} className="h-full w-full object-cover" />
+                    </button>
+                  ) : (
+                    <div className={`hidden h-10 w-14 shrink-0 items-center justify-center rounded-lg border sm:flex ${catCls}`}>
+                      <Bug className="h-4 w-4" />
                     </div>
                   )}
-
-                  <div className={`mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] ${muted}`}>
-                    {project && (
-                      <span className="flex items-center gap-1">
-                        <Folder className="h-3 w-3" /> {project.name}
-                      </span>
-                    )}
-                    {wo && (
-                      <span className="flex items-center gap-1">
-                        <Link2 className="h-3 w-3" /> {wo.title}
-                      </span>
-                    )}
-                    <span className="flex items-center gap-1">
-                      <Flag className="h-3 w-3" /> Reported by {issue.reportedBy}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" /> {issue.dateReported} {issue.timeReported && `· ${issue.timeReported}`}
-                    </span>
-                  </div>
                 </div>
 
-                {/* Assignee + actions */}
-                <div className="flex shrink-0 flex-col items-end gap-2 self-start">
+                {/* Description */}
+                <p className={`line-clamp-1 text-xs leading-relaxed ${muted}`}>{issue.description}</p>
+
+                {/* Meta */}
+                <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] ${muted}`}>
+                  {project && (
+                    <span className="flex items-center gap-1">
+                      <Folder className="h-3 w-3" /> {project.name}
+                    </span>
+                  )}
+                  {wo && (
+                    <span className="flex items-center gap-1">
+                      <Link2 className="h-3 w-3" /> {wo.title}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1">
+                    <Flag className="h-3 w-3" /> by {issue.reportedBy}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" /> {issue.dateReported}
+                    {issue.timeReported && ` · ${issue.timeReported}`}
+                  </span>
+                </div>
+
+                {/* Resolution note */}
+                {issue.status === 'resolved' && issue.resolution && (
+                  <div className={`flex items-start gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] ${dark ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300' : 'border-emerald-500/30 bg-emerald-500/5 text-emerald-700'}`}>
+                    <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0" />
+                    <span>
+                      <span className="font-semibold">Cause & fix:</span> {issue.resolution}
+                    </span>
+                  </div>
+                )}
+
+                {/* Footer: assignee + actions */}
+                <div className={`flex flex-wrap items-center justify-between gap-2 border-t pt-2 ${cardBorder}`}>
                   <div className="flex items-center gap-1.5">
                     <span
-                      className={`flex h-7 w-7 items-center justify-center rounded-lg text-[10px] font-bold ${
+                      className={`flex h-6 w-6 items-center justify-center rounded-lg text-[9px] font-bold ${
                         dark ? 'bg-zinc-800 text-zinc-200' : 'bg-zinc-200 text-zinc-700'
                       }`}
                     >
                       {initials(assignee?.name)}
                     </span>
-                    <div className="text-right leading-tight">
-                      <div className={`text-[11px] font-semibold ${heading}`}>{assignee?.name || 'Unassigned'}</div>
-                      <div className={`text-[10px] ${muted}`}>{isMine ? 'Assigned to you' : 'Assignee'}</div>
+                    <div className="leading-tight">
+                      <div className={`text-[10px] font-semibold ${heading}`}>{assignee?.name}</div>
+                      <div className={`text-[9px] uppercase tracking-wide ${muted}`}>{isMine ? 'Assigned to you' : 'Assignee'}</div>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap justify-end gap-1.5">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     {issue.status === 'open' && isMine && (
                       <button
-                        onClick={() => handleAction(issue, 'in-progress')}
-                        className="rounded-lg bg-sky-600 px-2.5 py-1.5 text-[10px] font-semibold text-white hover:bg-sky-500 cursor-pointer"
+                        onClick={() => updateIssueStatus(issue.id, 'in-progress')}
+                        className="flex items-center gap-1.5 rounded-lg bg-sky-600 px-3 py-1.5 text-[10px] font-semibold text-white hover:bg-sky-500 cursor-pointer"
                       >
-                        Start Fixing
+                        <Wrench className="h-3 w-3" /> Start Fixing
                       </button>
                     )}
                     {issue.status === 'in-progress' && isMine && (
                       <button
-                        onClick={() => handleAction(issue, 'resolved')}
-                        className="rounded-lg bg-emerald-600 px-2.5 py-1.5 text-[10px] font-semibold text-white hover:bg-emerald-500 cursor-pointer"
+                        onClick={() => setResolving(issue)}
+                        className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-[10px] font-semibold text-white shadow-md shadow-emerald-600/30 hover:bg-emerald-500 cursor-pointer"
                       >
-                        <CheckCircle2 className="mr-1 inline h-3 w-3" /> Resolve
+                        <CheckCircle2 className="h-3 w-3" /> Mark Solved
                       </button>
                     )}
-                    {issue.status === 'resolved' && isPm && (
+                    {issue.status === 'resolved' && isMine && (
                       <button
-                        onClick={() => handleAction(issue, 'closed')}
-                        className="rounded-lg bg-zinc-700 px-2.5 py-1.5 text-[10px] font-semibold text-white hover:bg-zinc-600 cursor-pointer"
+                        onClick={() => updateIssueStatus(issue.id, 'open', '')}
+                        title="Reopen issue"
+                        className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[10px] font-semibold transition-colors cursor-pointer ${
+                          dark ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700' : 'bg-zinc-200 text-zinc-700 hover:bg-zinc-300'
+                        }`}
                       >
-                        Confirm Fix
-                      </button>
-                    )}
-                    {(issue.status === 'resolved' || issue.status === 'closed') && (
-                      <button
-                        onClick={() => handleAction(issue, 'open')}
-                        title="Reopen"
-                        className={`rounded-lg p-1.5 ${dark ? 'hover:bg-zinc-800' : 'hover:bg-zinc-200'} ${muted} cursor-pointer`}
-                      >
-                        <RotateCcw className="h-3.5 w-3.5" />
+                        <RotateCcw className="h-3 w-3" /> Reopen
                       </button>
                     )}
                   </div>
@@ -598,17 +757,20 @@ export default function DevIssues({ dark }) {
             </div>
           );
         })}
-
-        {filtered.length === 0 && (
-          <div className={`rounded-2xl border py-16 text-center ${panel}`}>
-            <CheckCircle2 className={`mx-auto h-10 w-10 ${muted}`} />
-            <p className={`mt-3 text-sm font-semibold ${heading}`}>No issues found</p>
-            <p className={`mt-1 text-xs ${muted}`}>Try clearing a filter or report a new issue.</p>
-          </div>
-        )}
       </div>
 
       {showReport && <ReportIssueModal dark={dark} onClose={() => setShowReport(false)} />}
+      {resolving && (
+        <ResolveIssueModal
+          dark={dark}
+          issue={resolving}
+          onCancel={() => setResolving(null)}
+          onConfirm={(note) => {
+            updateIssueStatus(resolving.id, 'resolved', note);
+            setResolving(null);
+          }}
+        />
+      )}
       {viewImage && (
         <ScreenshotLightbox
           src={viewImage.src}

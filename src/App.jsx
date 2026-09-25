@@ -4,7 +4,7 @@ import { useApp } from './data/context.js';
 import { appsForRole } from './data/dockConfig.js';
 import Login from './pages/Login';
 import AppShell from './components/AppShell';
-
+//commet
 const HOME = '/app/dashboard';
 
 function RequireAuth({ children }) {
