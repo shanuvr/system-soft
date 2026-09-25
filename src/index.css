@@ -125,3 +125,72 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #8b5cf6;
 }
+
+/* Dock energy glow — a comet dot that walks along the dock border */
+.dock-glow {
+  position: absolute;
+  inset: 4px 0;
+  border-radius: 1rem;
+  pointer-events: none;
+  opacity: 0;
+  animation: dock-glow-fade 2s ease-in-out forwards;
+}
+
+/* faint base ring so the border reads as glowing during the burst */
+.dock-glow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.4), 0 0 8px rgba(139, 92, 246, 0.3);
+}
+
+/* comet head traveling clockwise around the border */
+.dock-glow::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 35% 35%, #ffffff, #c4b5fd 55%, #8b5cf6 90%);
+  box-shadow: 0 0 8px rgba(196, 181, 253, 0.95), 0 0 18px rgba(139, 92, 246, 0.7);
+  animation: dock-glow-walk 2s linear infinite;
+}
+
+@keyframes dock-glow-walk {
+  0% {
+    top: -5px;
+    left: -5px;
+  }
+  25% {
+    top: -5px;
+    left: calc(100% - 7px);
+  }
+  50% {
+    top: calc(100% - 7px);
+    left: calc(100% - 7px);
+  }
+  75% {
+    top: calc(100% - 7px);
+    left: -5px;
+  }
+  100% {
+    top: -5px;
+    left: -5px;
+  }
+}
+
+@keyframes dock-glow-fade {
+  0% {
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}

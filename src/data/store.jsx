@@ -952,6 +952,57 @@ export function AppProvider({ children }) {
     });
   };
 
+  const submitDailyReport = ({ date, entries }) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    if (!currentUser?.id) return;
+    const clean = (entries || [])
+      .map((entry) => ({
+        workOrderId: entry.workOrderId || null,
+        hours: Math.max(0, Number(entry.hours) || 0),
+        notes: ((entry.notes || entry.description) || '').trim(),
+      }))
+      .filter((entry) => entry.hours > 0 || entry.notes);
+    if (!clean.length) return;
+    const reportDate = date || today;
+    const created = clean.map((entry) => ({
+      id: uid('re'),
+      userId: currentUser.id,
+      date: reportDate,
+      time,
+      hours: entry.hours,
+      workOrderId: entry.workOrderId,
+      notes: entry.notes,
+    }));
+    const totalHours = clean.reduce((s, entry) => s + entry.hours, 0);
+    const firstWo = clean.map((e) => e.workOrderId).filter(Boolean).length
+      ? ` (${clean.filter((e) => e.workOrderId).length} linked work orders)`
+      : '';
+    setDb((prev) => ({
+      ...prev,
+      reportEntries: [...created, ...(prev.reportEntries || [])],
+      notifications: [
+        makeNotification(
+          'report',
+          `${currentUser?.name || 'User'} submitted a daily report — ${clean.length} entries, ${totalHours}h${firstWo}`,
+          { actor: currentUser?.name || 'User', date: today, time, workOrderId: created[0]?.workOrderId || null },
+        ),
+        ...(prev.notifications || []),
+      ],
+      activity: [
+        {
+          id: uid('a'),
+          date: today,
+          time,
+          actor: currentUser?.name || 'User',
+          text: `submitted a daily report (${clean.length} entries, ${totalHours}h)`,
+          projectId: null,
+        },
+        ...(prev.activity || []),
+      ],
+    }));
+  };
+
   const deleteReportEntry = (id) => {
     setDb((prev) => ({
       ...prev,
@@ -996,6 +1047,7 @@ export function AppProvider({ children }) {
         markNotificationRead,
         markAllNotificationsRead,
         addReportEntry,
+        submitDailyReport,
         deleteReportEntry,
       }}
     >

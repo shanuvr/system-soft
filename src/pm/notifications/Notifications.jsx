@@ -9,6 +9,7 @@ const TYPE_LABELS = {
   issue: 'Issue',
   hours: 'Hours logged',
   assignment: 'Work order',
+  report: 'Daily report',
   status: 'Status update',
 };
 

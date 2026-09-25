@@ -56,7 +56,7 @@ export default function Login() {
 
   const [authDots, setAuthDots] = useState(0);
   const [leaving, setLeaving] = useState(false);
-  const [routeTarget, setRouteTarget] = useState('/app/dashboard');
+  const [routeTarget, setRouteTarget] = useState('/dev/apps/dashboard');
 
   const usernameRef = useRef(null);
   const passwordRef = useRef(null);
@@ -153,7 +153,7 @@ export default function Login() {
     }
 
     setLoginHistory((prev) => [...prev, { type: 'password', length: password.length }]);
-    setRouteTarget('/app/dashboard');
+    setRouteTarget(`/${user.role}/apps/dashboard`);
     setAuthDots(0);
     setStep('authenticating');
   };

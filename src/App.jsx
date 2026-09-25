@@ -4,8 +4,11 @@ import { useApp } from './data/context.js';
 import { appsForRole } from './data/dockConfig.js';
 import Login from './pages/Login';
 import AppShell from './components/AppShell';
-//commet
-const HOME = '/app/dashboard';
+
+function homeForRole(role) {
+  const prefix = role === 'dev' ? '/dev/apps' : '/pm/apps';
+  return `${prefix}/dashboard`;
+}
 
 function RequireAuth({ children }) {
   const { currentUser } = useApp();
@@ -15,15 +18,18 @@ function RequireAuth({ children }) {
 
 function RedirectHome() {
   const { currentUser } = useApp();
-  return <Navigate to={currentUser ? HOME : '/login'} replace />;
+  return <Navigate to={currentUser ? homeForRole(currentUser?.role) : '/login'} replace />;
 }
 
 function ShellRoute() {
-  const { appId } = useParams();
+  const { roleSegment, appId } = useParams();
   const { currentUser } = useApp();
-  const apps = appsForRole(currentUser?.role || 'pm');
   if (!currentUser) return <Navigate to="/login" replace />;
-  if (!apps.some((a) => a.id === appId)) return <Navigate to={HOME} replace />;
+  if (roleSegment !== currentUser.role) {
+    return <Navigate to={homeForRole(currentUser.role)} replace />;
+  }
+  const apps = appsForRole(currentUser.role);
+  if (!apps.some((a) => a.id === appId)) return <Navigate to={homeForRole(currentUser.role)} replace />;
   return <AppShell key={appId} initialApp={appId} />;
 }
 
@@ -34,10 +40,11 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
         {/* Backwards-compatible paths for existing bookmarks */}
-        <Route path="/dashboard" element={<Navigate to={HOME} replace />} />
-        <Route path="/developer" element={<Navigate to={HOME} replace />} />
+        <Route path="/dashboard" element={<RedirectHome />} />
+        <Route path="/developer" element={<RedirectHome />} />
+        <Route path="/app/:appId" element={<RedirectHome />} />
         <Route
-          path="/app/:appId"
+          path="/:roleSegment/apps/:appId"
           element={
             <RequireAuth>
               <ShellRoute />

@@ -140,7 +140,7 @@ export default function AppShell({ initialApp = 'dashboard' }) {
 
   const selectApp = (id) => {
     setNavCount((c) => c + 1);
-    navigate(`/app/${id}`);
+    navigate(`/${role}/apps/${id}`);
   };
 
   const handleLogout = () => {
@@ -178,7 +178,7 @@ export default function AppShell({ initialApp = 'dashboard' }) {
             <span className={`hidden sm:inline text-[10px] ${contentOn}`}>{ROLE_LABELS[role] || role}</span>
           </div>
           <button
-            onClick={() => navigate('/app/notifications')}
+            onClick={() => navigate(`/${role}/apps/notifications`)}
             title="Notifications"
             className={`relative rounded-md p-1.5 transition-colors cursor-pointer ${
               dark ? 'hover:bg-zinc-800' : 'hover:bg-zinc-200'

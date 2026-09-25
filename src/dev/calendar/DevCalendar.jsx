@@ -38,14 +38,14 @@ function fmtLabel(iso) {
   return d.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-function EventDetailModal({ dark, ev, projectsById, usersById, onClose }) {
+function EventDetailModal({ dark, ev, projectsById, usersById, role, onClose }) {
   const navigate = useNavigate();
   const meta = TYPE_META[ev.type];
   const project = ev.projectId ? projectsById[ev.projectId] : null;
 
-  const goTo = (path) => {
+  const goTo = (appId) => {
     onClose();
-    navigate(path);
+    navigate(`/${role}/apps/${appId}`);
   };
 
   const bgPanel = dark ? 'bg-zinc-900 text-zinc-100' : 'bg-white text-zinc-800';
@@ -126,7 +126,7 @@ function EventDetailModal({ dark, ev, projectsById, usersById, onClose }) {
         <div className="flex flex-wrap justify-end gap-2 pt-4 mt-4 border-t border-zinc-800/60">
           {ev.type === 'workorder' && (
             <button
-              onClick={() => goTo('/app/workorders')}
+              onClick={() => goTo('workorders')}
               className="flex items-center gap-1.5 rounded-xl bg-violet-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-violet-500 cursor-pointer"
             >
               Open in Work Orders <ArrowUpRight className="h-3.5 w-3.5" />
@@ -134,7 +134,7 @@ function EventDetailModal({ dark, ev, projectsById, usersById, onClose }) {
           )}
           {ev.type === 'project' && (
             <button
-              onClick={() => goTo('/app/projects')}
+              onClick={() => goTo('projects')}
               className="flex items-center gap-1.5 rounded-xl bg-sky-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-sky-500 cursor-pointer"
             >
               Open in Projects <ArrowUpRight className="h-3.5 w-3.5" />
@@ -142,7 +142,7 @@ function EventDetailModal({ dark, ev, projectsById, usersById, onClose }) {
           )}
           {ev.type === 'ptd' && (
             <button
-              onClick={() => goTo('/app/ptds')}
+              onClick={() => goTo('ptds')}
               className="flex items-center gap-1.5 rounded-xl bg-amber-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-amber-500 cursor-pointer"
             >
               Open in PTDs <ArrowUpRight className="h-3.5 w-3.5" />
@@ -150,7 +150,7 @@ function EventDetailModal({ dark, ev, projectsById, usersById, onClose }) {
           )}
           {ev.type === 'issue' && (
             <button
-              onClick={() => goTo('/app/issues')}
+              onClick={() => goTo('issues')}
               className="flex items-center gap-1.5 rounded-xl bg-rose-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-rose-500 cursor-pointer"
             >
               Open in Issues <ArrowUpRight className="h-3.5 w-3.5" />
@@ -431,6 +431,7 @@ export default function DevCalendar({ dark }) {
           ev={detail}
           projectsById={projectsById}
           usersById={usersById}
+          role={role}
           onClose={() => setDetail(null)}
         />
       )}

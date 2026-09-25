@@ -62,6 +62,29 @@ export default function Dock({
   const idleColor = dark ? 'text-zinc-200 hover:text-violet-300' : 'text-zinc-600 hover:text-violet-600';
   const ref = useRef(null);
   const [edge, setEdge] = useState({ left: false, right: false });
+  const [glowOn, setGlowOn] = useState(false);
+
+  // Occasionally fire a glow burst that sweeps around the dock.
+  useEffect(() => {
+    let mounted = true;
+    let timeout;
+    const schedule = (delay) => {
+      timeout = setTimeout(() => {
+        if (!mounted) return;
+        setGlowOn(true);
+        timeout = setTimeout(() => {
+          if (!mounted) return;
+          setGlowOn(false);
+          schedule(14000 + Math.random() * 12000);
+        }, 2000);
+      }, delay);
+    };
+    schedule(6000 + Math.random() * 7000);
+    return () => {
+      mounted = false;
+      clearTimeout(timeout);
+    };
+  }, []);
 
   const updateEdge = () => {
     const el = ref.current;
@@ -110,6 +133,8 @@ export default function Dock({
 
   return (
     <div className="relative flex max-w-[calc(100vw-1rem)] sm:max-w-full min-w-0 items-center justify-center pt-1 pb-1 overflow-visible">
+      {/* Random energy glow around the dock */}
+      {glowOn && <span aria-hidden className="dock-glow" />}
       {/* Scroll Left Button & Gradient (Mobile only) */}
       {edge.left && (
         <button

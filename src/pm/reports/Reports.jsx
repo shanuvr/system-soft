@@ -4,7 +4,9 @@ import {
   ArrowDownToLine,
   CheckCircle2,
   Clock,
+  FileText,
   Hourglass,
+  Link2,
   Search,
   Timer,
 } from 'lucide-react';
@@ -63,6 +65,10 @@ export default function Reports({ dark }) {
     () => Object.fromEntries((db.projects || []).map((p) => [p.id, p])),
     [db.projects],
   );
+  const workOrdersById = useMemo(
+    () => Object.fromEntries((db.workOrders || []).map((w) => [w.id, w])),
+    [db.workOrders],
+  );
 
   const today = toIsoLocal(new Date());
 
@@ -74,10 +80,15 @@ export default function Reports({ dark }) {
 
   const reports = useMemo(() => {
     const inRange = (w) =>
-      !periodActive || Boolean(w.dueDate && w.dueDate >= fromDate && w.dueDate <= toDate);
+      !periodActive ||
+      ((!w.startDate || w.startDate <= toDate) && (!w.dueDate || w.dueDate >= fromDate));
+    const entInRange = (e) => !periodActive || Boolean(e.date && e.date >= fromDate && e.date <= toDate);
     const devs = (db.users || []).filter((u) => u.role === 'dev');
     return devs.map((user) => {
       const wos = (db.workOrders || []).filter((w) => w.assignee === user.id && inRange(w));
+      const entries = (db.reportEntries || [])
+        .filter((e) => e.userId === user.id && entInRange(e))
+        .sort((a, b) => `${b.date || ''}${b.time || ''}`.localeCompare(`${a.date || ''}${a.time || ''}`));
       const sum = (fn) => wos.reduce((s, w) => s + (Number(fn(w)) || 0), 0);
       const est = sum((w) => w.estimatedHours);
       const logged = sum((w) => w.actualHours);
@@ -88,7 +99,21 @@ export default function Reports({ dark }) {
       const avgProgress = wos.length
         ? Math.round(wos.reduce((s, w) => s + (Number(w.progress) || 0), 0) / wos.length)
         : 0;
-      return { user, wos, est, logged, remaining, done, inProgress, overdue, avgProgress };
+      const entryHours = entries.reduce((s, e) => s + (Number(e.hours) || 0), 0);
+      return {
+        user,
+        wos,
+        est,
+        logged,
+        remaining,
+        done,
+        inProgress,
+        overdue,
+        avgProgress,
+        entries,
+        entryCount: entries.length,
+        entryHours,
+      };
     });
   }, [db, today, periodActive, fromDate, toDate]);
 
@@ -300,6 +325,38 @@ export default function Reports({ dark }) {
       margin: { left: M, right: M, top: 70 },
     });
 
+    // ---- Daily report entries table ----
+    const entriesBody = selected.entries.length
+      ? selected.entries.map((e) => {
+          const wo = workOrdersById[e.workOrderId];
+          return [
+            e.date || '-',
+            e.time || '-',
+            e.hours > 0 ? `${fmtHours(e.hours)}h` : '-',
+            wo ? wo.id : e.workOrderId || 'General',
+            e.notes || '-',
+          ];
+        })
+      : [['No daily reports submitted.', '', '', '', '']];
+
+    const tableEndY = (doc.lastAutoTable?.finalY || tableY) + 20;
+    autoTable(doc, {
+      startY: sectionHeader('Daily Report Entries', tableEndY) + 10,
+      head: [['Date', 'Time', 'Hours', 'Work Order', 'Notes']],
+      body: entriesBody,
+      theme: 'grid',
+      styles: { fontSize: 8, cellPadding: 5, textColor: BLACK, lineColor: BORDER, lineWidth: 0.6, valign: 'middle' },
+      headStyles: { fillColor: BLACK, textColor: WHITE, fontStyle: 'bold', fontSize: 8, cellPadding: 5 },
+      alternateRowStyles: { fillColor: ZEBRA },
+      columnStyles: {
+        0: { cellWidth: 70 },
+        1: { cellWidth: 50, halign: 'center' },
+        2: { cellWidth: 50, halign: 'center' },
+        3: { cellWidth: 90 },
+      },
+      margin: { left: M, right: M, top: 70 },
+    });
+
     drawFooter();
     const periodTag = periodActive ? `-${fromDate}-to-${toDate}` : '';
     doc.save(`employee-report-${selected.user.name.replace(/\s+/g, '-').toLowerCase()}${periodTag}.pdf`);
@@ -506,6 +563,12 @@ export default function Reports({ dark }) {
                         <span className="flex items-center gap-1 rounded-lg bg-rose-500/10 px-2 py-1 text-[10px] font-semibold text-rose-400 border border-rose-500/20">
                           <AlertTriangle className="h-3 w-3" /> {selected.overdue} overdue
                         </span>
+                        <span className="flex items-center gap-1 rounded-lg bg-violet-500/10 px-2 py-1 text-[10px] font-semibold text-violet-400 border border-violet-500/20">
+                          <FileText className="h-3 w-3" /> {selected.entryCount} daily report{selected.entryCount !== 1 ? 's' : ''}
+                        </span>
+                        <span className="flex items-center gap-1 rounded-lg bg-sky-500/10 px-2 py-1 text-[10px] font-semibold text-sky-400 border border-sky-500/20">
+                          <Clock className="h-3 w-3" /> {fmtHours(selected.entryHours)}h reported
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -578,6 +641,52 @@ export default function Reports({ dark }) {
                 ) : (
                   <div className={`py-8 text-center text-xs ${muted}`}>
                     {periodActive ? 'No work orders in this period.' : 'No work orders assigned yet.'}
+                  </div>
+                )}
+              </div>
+
+              {/* Daily report entries */}
+              <div className={`mt-4 rounded-2xl border p-4 sm:p-5 ${panel}`}>
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className={`text-sm font-bold ${heading}`}>Daily Report Entries ({selected.entries.length})</h3>
+                  <span className={`text-[10px] ${muted}`}>
+                    {fmtHours(selected.entryHours)}h reported by {selected.user.name.split(' ')[0]}
+                  </span>
+                </div>
+                {selected.entries.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    {selected.entries.map((e) => {
+                      const wo = workOrdersById[e.workOrderId];
+                      return (
+                        <div key={e.id} className={`rounded-xl border px-3 py-2.5 ${border} ${rowHover}`}>
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
+                            <span className={`font-bold tabular-nums ${heading}`}>{e.date}</span>
+                            {e.time && <span className={muted}>{e.time}</span>}
+                            {e.hours > 0 && (
+                              <span className="rounded bg-violet-500/10 px-1.5 py-0.5 text-[10px] font-bold text-violet-400">
+                                {fmtHours(e.hours)}h
+                              </span>
+                            )}
+                            {wo ? (
+                              <span className="flex items-center gap-1 rounded bg-zinc-500/10 px-1.5 py-0.5 font-mono text-[10px] font-bold text-violet-400">
+                                <Link2 className="h-3 w-3" /> {wo.id}
+                              </span>
+                            ) : (
+                              <span className="rounded bg-zinc-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-zinc-400">
+                                General
+                              </span>
+                            )}
+                          </div>
+                          <p className={`mt-1 text-xs leading-relaxed ${e.notes ? heading : muted}`}>
+                            {e.notes || 'No notes added.'}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className={`py-8 text-center text-xs ${muted}`}>
+                    {periodActive ? 'No daily reports in this period.' : 'No daily reports submitted yet.'}
                   </div>
                 )}
               </div>
