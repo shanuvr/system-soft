@@ -266,28 +266,8 @@ export default function Reports({ dark }) {
     });
     y += boxH + 16;
 
-    // ── Hours spent progress bar ──
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(...BLACK);
-    doc.text('HOURS SPENT', M, y);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(...GRAY);
-    doc.text(`${fmtHours(selected.logged)}h of ${fmtHours(selected.est)}h allocated (${hPct}%)`, pageW - M, y, {
-      align: 'right',
-    });
-    const barY = y + 8;
-    const barW = pageW - 2 * M;
-    doc.setFillColor(...TRACK);
-    doc.roundedRect(M, barY, barW, 8, 4, 4, 'F');
-    if (hPct > 0) {
-      doc.setFillColor(...BLACK);
-      doc.roundedRect(M, barY, Math.max(6, (barW * hPct) / 100), 8, 4, 4, 'F');
-    }
-
     // ── Work order breakdown table ──
-    const tableY = sectionHeader('Work Order Breakdown', barY + 22);
+    const tableY = sectionHeader('Work Order Breakdown', y);
     const woBody = selected.wos.length
       ? selected.wos.map((w) => {
           const project = projectsById[w.projectId];

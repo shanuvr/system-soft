@@ -6,7 +6,7 @@ function isoDaysFromNow(days) {
 
 export function createSeed() {
   return {
-    _seedVersion: 21,
+    _seedVersion: 24,
 
     users: [
       { id: 'u1', username: 'admin', password: 'admin', name: 'Ajoy Kumar', role: 'pm', title: 'Project Manager' },
@@ -57,7 +57,7 @@ export function createSeed() {
         name: 'Inventory System Migration',
         client: 'RetailPlus',
         pm: 'u1',
-        status: 'completed',
+        status: 'delayed',
         priority: 'medium',
         startDate: isoDaysFromNow(-180),
         dueDate: isoDaysFromNow(-85),
@@ -87,8 +87,8 @@ export function createSeed() {
     ],
 
     ptds: [
-      { id: 'p1t2', ref: 'PTD-1027', name: 'Dashboard Widgets', description: 'New dashboard widgets including revenue trends and a realtime alerts panel.', projectId: 'p1', receivedDate: isoDaysFromNow(-6), estimatedHours: 80, allocatedHours: 0, usedHours: 0, progress: 0, deadline: isoDaysFromNow(13), status: 'in-progress' },
-      { id: 'p2t1', ref: 'PTD-1102', name: 'Core Banking API', description: 'Integration with the core banking message queue: ingestion, reconciliation and public API limits.', projectId: 'p2', receivedDate: isoDaysFromNow(-15), estimatedHours: 200, allocatedHours: 72, usedHours: 38, progress: 25, deadline: isoDaysFromNow(3), status: 'in-progress' },
+      { id: 'p1t2', ref: 'PTD-1027', name: 'Landing page design', description: 'New dashboard widgets including revenue trends and a realtime alerts panel.', projectId: 'p1', receivedDate: isoDaysFromNow(-6), estimatedHours: 80, allocatedHours: 0, usedHours: 0, progress: 0, deadline: isoDaysFromNow(13), status: 'not-started' },
+      { id: 'p2t1', ref: 'PTD-1102', name: 'Payment Gateway integration', description: 'Integration with the core banking message queue: ingestion, reconciliation and public API limits.', projectId: 'p2', receivedDate: isoDaysFromNow(-15), estimatedHours: 200, allocatedHours: 72, usedHours: 38, progress: 25, deadline: isoDaysFromNow(3), status: 'in-progress' },
       { id: 'p1t1', ref: 'PTD-1024', name: 'User Authentication Rework', description: 'Rework portal authentication: OAuth2 login, sessions, token handling and password reset.', projectId: 'p1', receivedDate: isoDaysFromNow(-10), estimatedHours: 120, allocatedHours: 56, usedHours: 42, progress: 65, deadline: isoDaysFromNow(-2), status: 'in-progress' },
     ],
 

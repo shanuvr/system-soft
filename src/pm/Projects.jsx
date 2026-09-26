@@ -35,6 +35,7 @@ const PROJECT_STATUS_LABELS = {
   'on-hold': 'On Hold',
   completed: 'Completed',
   'not-started': 'Not Started',
+  delayed: 'Delayed',
 };
 
 const PROJECT_STATUS_STYLES = {
@@ -42,17 +43,19 @@ const PROJECT_STATUS_STYLES = {
   'on-hold': 'bg-amber-500/15 text-amber-400 border border-amber-500/20',
   completed: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20',
   'not-started': 'bg-zinc-500/15 text-zinc-400 border border-zinc-500/20',
+  delayed: 'bg-rose-500/15 text-rose-400 border border-rose-500/20',
 };
 
 const HEALTH_STYLES = {
   'on-track': 'bg-violet-500/15 text-violet-400 border border-violet-500/20',
   'at-risk': 'bg-amber-500/15 text-amber-400 border border-amber-500/20',
   overdue: 'bg-red-500/15 text-red-400 border border-red-500/20',
+  delayed: 'bg-rose-500/15 text-rose-400 border border-rose-500/20',
 };
 
-const HEALTH_LABELS = { 'on-track': 'On Track', 'at-risk': 'At Risk', overdue: 'Overdue' };
-const HEALTH_COLORS = { 'on-track': '#8b5cf6', 'at-risk': '#f59e0b', overdue: '#ef4444' };
-const HEALTH_ACCENT = { 'on-track': 'bg-violet-500', 'at-risk': 'bg-amber-500', overdue: 'bg-red-500' };
+const HEALTH_LABELS = { 'on-track': 'On Track', 'at-risk': 'At Risk', overdue: 'Overdue', delayed: 'Delayed' };
+const HEALTH_COLORS = { 'on-track': '#8b5cf6', 'at-risk': '#f59e0b', overdue: '#ef4444', delayed: '#f43f5e' };
+const HEALTH_ACCENT = { 'on-track': 'bg-violet-500', 'at-risk': 'bg-amber-500', overdue: 'bg-red-500', delayed: 'bg-rose-500' };
 
 function StatusChip({ status }) {
   return (
@@ -109,7 +112,8 @@ function ProgressRing({ value, color, dark, size = 52 }) {
 }
 
 function projectHealth(proj, progress) {
-  if (proj.status === 'completed') return 'on-track';
+  if (proj.status === 'delayed') return 'delayed';
+  if (proj.status === 'completed') return 'completed';
   if (!proj.dueDate) return 'on-track';
   const today = new Date().toISOString().slice(0, 10);
   if (proj.dueDate < today && progress < 100) return 'overdue';
@@ -235,7 +239,7 @@ export default function Projects({ dark }) {
     return {
       total: projects.length,
       active: projects.filter((p) => p.status === 'active').length,
-      atRisk: projects.filter((p) => p.health === 'at-risk' || p.health === 'overdue').length,
+      atRisk: projects.filter((p) => p.health === 'at-risk' || p.health === 'overdue' || p.status === 'delayed').length,
       completed: projects.filter((p) => p.status === 'completed').length,
     };
   }, [projects]);
@@ -248,8 +252,8 @@ export default function Projects({ dark }) {
   const attention = useMemo(
     () =>
       projects
-        .filter((p) => p.health === 'overdue' || p.health === 'at-risk' || p.blockers.length > 0)
-        .sort((a) => (a.health === 'overdue' ? -1 : 1)),
+        .filter((p) => p.status !== 'completed' && (p.health === 'overdue' || p.health === 'at-risk' || p.health === 'delayed' || p.status === 'delayed' || p.blockers.length > 0))
+        .sort((a) => (a.health === 'overdue' || a.status === 'delayed' ? -1 : 1)),
     [projects],
   );
 
@@ -279,16 +283,6 @@ export default function Projects({ dark }) {
         ? prev.team.filter((id) => id !== userId)
         : [...prev.team, userId],
     }));
-  };
-
-  const cycleMilestoneStatus = (milestoneId, currentStatus) => {
-    const next =
-      currentStatus === 'pending'
-        ? 'in-progress'
-        : currentStatus === 'in-progress'
-          ? 'done'
-          : 'pending';
-    updateMilestone(milestoneId, { status: next });
   };
 
   // Avatar stack helper
@@ -383,7 +377,9 @@ export default function Projects({ dark }) {
                 <div className="flex flex-wrap items-center gap-2">
                   <h1 className={`text-lg sm:text-2xl font-bold ${heading}`}>{selected.name}</h1>
                   <StatusChip status={selected.status} />
-                  <HealthBadge health={selected.health} />
+                  {selected.status !== 'completed' && selected.status !== 'delayed' && (
+                    <HealthBadge health={selected.health} />
+                  )}
                   <PriorityBadge priority={selected.priority} />
                 </div>
                 <div className={`mt-1 flex flex-wrap items-center gap-2 text-xs ${muted}`}>
@@ -452,7 +448,7 @@ export default function Projects({ dark }) {
         <div className="mt-4 flex items-center justify-between border-b pb-1 gap-2 overflow-x-auto scrollbar-hide">
           <div className="flex items-center gap-1.5">
             {[
-              { id: 'overview', label: 'Overview & Roadmap', icon: Layers },
+              { id: 'overview', label: 'Overview', icon: Layers },
               { id: 'ptds', label: `PTDs (${selected.ptds.length})`, icon: FileText },
               { id: 'workorders', label: `Work Orders (${selected.workOrders.length})`, icon: ListTodo },
               { id: 'activity', label: 'Activity Log', icon: Activity },
@@ -482,64 +478,9 @@ export default function Projects({ dark }) {
           )}
         </div>
 
-        {/* Tab 1: OVERVIEW & MILESTONES */}
+        {/* Tab 1: OVERVIEW */}
         {projectTab === 'overview' && (
           <div className="mt-4 space-y-4 animate-fade-in">
-            {/* Interactive Milestone Roadmap */}
-            <div className={`rounded-2xl border p-4 sm:p-5 ${panel}`}>
-              <div className="mb-3 flex items-center justify-between">
-                <div>
-                  <h2 className={`text-sm font-bold ${heading}`}>Project Milestones Pipeline</h2>
-                  <p className={`text-[11px] ${muted}`}>
-                    Click milestone stage to advance its state (Pending → In Progress → Done).
-                  </p>
-                </div>
-                <span className="text-xs font-bold text-violet-400">
-                  {selected.milestones.filter((m) => m.status === 'done').length} /{' '}
-                  {selected.milestones.length} Completed
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-                {selected.milestones.map((m, idx) => {
-                  const isDone = m.status === 'done';
-                  const isInProgress = m.status === 'in-progress';
-                  return (
-                    <button
-                      key={m.id}
-                      onClick={() => cycleMilestoneStatus(m.id, m.status)}
-                      className={`relative flex flex-col rounded-xl border p-3 text-left transition-all cursor-pointer hover:scale-[1.02] ${
-                        isDone
-                          ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
-                          : isInProgress
-                            ? 'border-violet-500 bg-violet-500/15 text-violet-300 ring-1 ring-violet-500/40'
-                            : dark
-                              ? 'border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:border-zinc-700'
-                              : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold uppercase tracking-wider opacity-70">
-                          Step 0{idx + 1}
-                        </span>
-                        {isDone ? (
-                          <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                        ) : isInProgress ? (
-                          <span className="h-2 w-2 rounded-full bg-violet-400 animate-ping" />
-                        ) : (
-                          <Clock className="h-3.5 w-3.5 opacity-40" />
-                        )}
-                      </div>
-                      <div className="mt-1 font-semibold text-xs sm:text-sm">{m.name}</div>
-                      <div className="mt-1 text-[10px] uppercase font-bold tracking-wider">
-                        {m.status.replace('-', ' ')}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
             {/* Team & Blockers Row */}
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               {/* Team Members */}
@@ -882,7 +823,7 @@ export default function Projects({ dark }) {
         <div className="flex flex-wrap items-center gap-2">
           {/* Status filter pills */}
           <div className={`flex rounded-xl border p-0.5 ${cardBorder}`}>
-            {['all', 'active', 'on-hold', 'completed', 'not-started'].map((s) => (
+            {['all', 'active', 'on-hold', 'delayed', 'completed', 'not-started'].map((s) => (
               <button
                 key={s}
                 onClick={() => setFilter(s)}
@@ -1058,7 +999,9 @@ export default function Projects({ dark }) {
                 <div className="mt-3 flex flex-wrap items-center gap-1.5">
                   <StatusChip status={p.status} />
                   <PriorityBadge priority={p.priority} />
-                  <HealthBadge health={p.health} />
+                  {p.status !== 'completed' && p.status !== 'delayed' && (
+                    <HealthBadge health={p.health} />
+                  )}
                   {p.blockers.length > 0 && (
                     <span className="flex items-center gap-1 rounded-md bg-red-500/15 border border-red-500/20 px-1.5 py-0.5 text-[10px] font-bold text-red-400">
                       <AlertTriangle className="h-3 w-3" />
@@ -1177,7 +1120,9 @@ export default function Projects({ dark }) {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
                         <StatusChip status={p.status} />
-                        <HealthBadge health={p.health} />
+                        {p.status !== 'completed' && p.status !== 'delayed' && (
+                          <HealthBadge health={p.health} />
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-right">
