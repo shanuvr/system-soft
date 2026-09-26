@@ -134,42 +134,45 @@ export default function Reports({ dark }) {
     const pageH = doc.internal.pageSize.getHeight();
     const M = 48;
 
-    const BLACK = hexToRgb('#000000');
-    const GRAY = hexToRgb('#4b5563');
-    const LIGHT = hexToRgb('#f3f4f6');
-    const ZEBRA = hexToRgb('#f9fafb');
+    const BLACK  = hexToRgb('#000000');
+    const GRAY   = hexToRgb('#4b5563');
+    const LIGHT  = hexToRgb('#f3f4f6');
+    const ZEBRA  = hexToRgb('#f9fafb');
     const BORDER = hexToRgb('#d1d5db');
-    const TRACK = hexToRgb('#e5e7eb');
-    const WHITE = hexToRgb('#ffffff');
+    const TRACK  = hexToRgb('#e5e7eb');
+    const WHITE  = hexToRgb('#ffffff');
 
     const hPct = selected.est ? Math.min(100, Math.round((selected.logged / selected.est) * 100)) : 0;
 
-    // ---- Footer on every page ----
+    // ── Footer on every page ──
     const drawFooter = () => {
       const pages = doc.internal.getNumberOfPages();
       for (let i = 1; i <= pages; i++) {
         doc.setPage(i);
+        doc.setDrawColor(...BORDER);
+        doc.setLineWidth(0.5);
+        doc.line(M, pageH - 38, pageW - M, pageH - 38);
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7.5);
+        doc.setFontSize(7);
         doc.setTextColor(...GRAY);
-        doc.text('System Soft - Programser International - Confidential', M, pageH - 26);
+        doc.text('System Soft  |  Programser International  |  Confidential', M, pageH - 26);
         doc.text(`Page ${i} of ${pages}`, pageW - M, pageH - 26, { align: 'right' });
       }
     };
 
-    // ---- Section header with underline ----
+    // ── Section header ──
     const sectionHeader = (label, currentY) => {
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10.5);
+      doc.setFontSize(10);
       doc.setTextColor(...BLACK);
       doc.text(label.toUpperCase(), M, currentY);
       doc.setDrawColor(...BORDER);
       doc.setLineWidth(0.7);
-      doc.line(M, currentY + 6, pageW - M, currentY + 6);
-      return currentY + 20;
+      doc.line(M, currentY + 5, pageW - M, currentY + 5);
+      return currentY + 18;
     };
 
-    // ---- Black masthead band ----
+    // ── Black masthead band ──
     doc.setFillColor(...BLACK);
     doc.rect(0, 0, pageW, 34, 'F');
     doc.setFont('helvetica', 'bold');
@@ -179,44 +182,40 @@ export default function Reports({ dark }) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(203, 207, 215);
-    doc.text('Programser International - Confidential', pageW - M, 21, { align: 'right' });
+    doc.text('Programser International  |  Confidential', pageW - M, 21, { align: 'right' });
 
-    // ---- Title ----
-    let y = 80;
+    // ── Title ──
+    let y = 66;
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(22);
+    doc.setFontSize(18);
     doc.setTextColor(...BLACK);
     doc.text('Employee Work Report', M, y);
-    y += 19;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9.5);
-    doc.setTextColor(...GRAY);
-    const periodText = periodActive ? `Report period: ${fromDate} to ${toDate}. ` : '';
-    doc.text(
-      `Prepared for ${selected.user.name} (${selected.user.title}), ${periodText}generated ${toIsoLocal(new Date())}.`,
-      M,
-      y,
-    );
-    y += 9;
-    doc.setDrawColor(...BLACK);
-    doc.setLineWidth(1.4);
-    doc.line(M, y, pageW - M, y);
-    y += 26;
-
-    // ---- Employee info card ----
-    const yc = y;
-    const cardH = 54;
-    doc.setFillColor(...LIGHT);
-    doc.setDrawColor(...BORDER);
-    doc.roundedRect(M, yc, pageW - 2 * M, cardH, 6, 6, 'FD');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(13);
-    doc.setTextColor(...BLACK);
-    doc.text(selected.user.name, M + 18, yc + 24);
+    y += 15;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(...GRAY);
-    doc.text(selected.user.title, M + 18, yc + 38);
+    const periodText = periodActive ? `Period: ${fromDate} to ${toDate}` : 'All periods';
+    doc.text(`${selected.user.name} (${selected.user.title})  |  ${periodText}  |  Generated ${toIsoLocal(new Date())}`, M, y);
+    y += 7;
+    doc.setDrawColor(...BLACK);
+    doc.setLineWidth(1);
+    doc.line(M, y, pageW - M, y);
+    y += 18;
+
+    // ── Employee info card ──
+    const yc = y;
+    const cardH = 48;
+    doc.setFillColor(...LIGHT);
+    doc.setDrawColor(...BORDER);
+    doc.roundedRect(M, yc, pageW - 2 * M, cardH, 4, 4, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.setTextColor(...BLACK);
+    doc.text(selected.user.name, M + 14, yc + 20);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...GRAY);
+    doc.text(selected.user.title, M + 14, yc + 34);
 
     const stats = [
       ['Work Orders', String(selected.wos.length)],
@@ -225,25 +224,25 @@ export default function Reports({ dark }) {
       ['Overdue', String(selected.overdue)],
     ];
     stats.forEach(([label, value], i) => {
-      const right = pageW - M - 16 - i * 78;
+      const cx = pageW - M - 36 - i * 86;
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
+      doc.setFontSize(6.5);
       doc.setTextColor(...GRAY);
-      doc.text(label.toUpperCase(), right, yc + 22, { align: 'right' });
+      doc.text(label.toUpperCase(), cx, yc + 18, { align: 'center' });
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11.5);
+      doc.setFontSize(11);
       doc.setTextColor(...BLACK);
-      doc.text(value, right, yc + 36, { align: 'right' });
+      doc.text(value, cx, yc + 32, { align: 'center' });
     });
-    y = yc + cardH + 24;
+    y = yc + cardH + 16;
 
-    // ---- Summary - hours boxes ----
+    // ── Summary - hours boxes ──
     y = sectionHeader('Summary - Hours', y);
-    const gap = 10;
+    const gap = 8;
     const boxW = (pageW - 2 * M - 3 * gap) / 4;
-    const boxH = 62;
+    const boxH = 52;
     const metrics = [
-      { label: 'Estimated', value: `${fmtHours(selected.est)}h`, sub: 'assigned hours' },
+      { label: 'Allocated', value: `${fmtHours(selected.est)}h`, sub: 'assigned hours' },
       { label: 'Logged', value: `${fmtHours(selected.logged)}h`, sub: 'time spent' },
       { label: 'Remaining', value: `${fmtHours(selected.remaining)}h`, sub: 'still to spend' },
       { label: 'Avg Progress', value: `${selected.avgProgress}%`, sub: 'across work orders' },
@@ -252,54 +251,54 @@ export default function Reports({ dark }) {
       const x = M + i * (boxW + gap);
       doc.setFillColor(...LIGHT);
       doc.setDrawColor(...BORDER);
-      doc.roundedRect(x, y, boxW, boxH, 6, 6, 'FD');
+      doc.roundedRect(x, y, boxW, boxH, 4, 4, 'FD');
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7);
+      doc.setFontSize(6.5);
       doc.setTextColor(...GRAY);
-      doc.text(m.label.toUpperCase(), x + 13, y + 18);
-      doc.setFontSize(17);
+      doc.text(m.label.toUpperCase(), x + 10, y + 14);
+      doc.setFontSize(15);
       doc.setTextColor(...BLACK);
-      doc.text(m.value, x + 13, y + 40);
+      doc.text(m.value, x + 10, y + 32);
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
+      doc.setFontSize(6.5);
       doc.setTextColor(...GRAY);
-      doc.text(m.sub, x + 13, y + 53);
+      doc.text(m.sub, x + 10, y + 44);
     });
-    y += boxH + 24;
+    y += boxH + 16;
 
-    // ---- Hours spent progress bar ----
+    // ── Hours spent progress bar ──
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.setTextColor(...BLACK);
     doc.text('HOURS SPENT', M, y);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setTextColor(...GRAY);
-    doc.text(`${fmtHours(selected.logged)}h of ${fmtHours(selected.est)}h estimated (${hPct}%)`, pageW - M, y, {
+    doc.text(`${fmtHours(selected.logged)}h of ${fmtHours(selected.est)}h allocated (${hPct}%)`, pageW - M, y, {
       align: 'right',
     });
-    const barY = y + 12;
+    const barY = y + 8;
     const barW = pageW - 2 * M;
     doc.setFillColor(...TRACK);
-    doc.roundedRect(M, barY, barW, 9, 4.5, 4.5, 'F');
+    doc.roundedRect(M, barY, barW, 8, 4, 4, 'F');
     if (hPct > 0) {
       doc.setFillColor(...BLACK);
-      doc.roundedRect(M, barY, Math.max(6, (barW * hPct) / 100), 9, 4.5, 4.5, 'F');
+      doc.roundedRect(M, barY, Math.max(6, (barW * hPct) / 100), 8, 4, 4, 'F');
     }
 
-    // ---- Work order breakdown table ----
-    const tableY = sectionHeader('Work Order Breakdown', barY + 30);
+    // ── Work order breakdown table ──
+    const tableY = sectionHeader('Work Order Breakdown', barY + 22);
     const woBody = selected.wos.length
       ? selected.wos.map((w) => {
           const project = projectsById[w.projectId];
           const remainingH = Math.max(0, (Number(w.estimatedHours) || 0) - (Number(w.actualHours) || 0));
           return [
-            w.title,
+            w.id,
             project?.name || '-',
             WO_STATUS_LABELS[w.status] || w.status,
-            fmtHours(w.estimatedHours),
-            fmtHours(w.actualHours),
-            fmtHours(remainingH),
+            `${fmtHours(w.estimatedHours)}h`,
+            `${fmtHours(w.actualHours)}h`,
+            `${fmtHours(remainingH)}h`,
             `${w.progress ?? 0}%`,
             w.dueDate || '-',
           ];
@@ -307,54 +306,22 @@ export default function Reports({ dark }) {
       : [['No work orders assigned.', '', '', '', '', '', '', '']];
 
     autoTable(doc, {
-      startY: tableY + 10,
-      head: [['Work Order', 'Project', 'Status', 'Est', 'Logged', 'Remaining', 'Progress', 'Due']],
+      startY: tableY + 2,
+      head: [['Work Order', 'Project', 'Status', 'Allocated Time', 'Logged', 'Remaining', 'Work Progress', 'Due']],
       body: woBody,
       theme: 'grid',
-      styles: { fontSize: 8, cellPadding: 5, textColor: BLACK, lineColor: BORDER, lineWidth: 0.6, valign: 'middle' },
-      headStyles: { fillColor: BLACK, textColor: WHITE, fontStyle: 'bold', fontSize: 8, cellPadding: 5 },
+      styles: { fontSize: 7.5, cellPadding: 4, textColor: BLACK, lineColor: BORDER, lineWidth: 0.5, valign: 'middle' },
+      headStyles: { fillColor: BLACK, textColor: WHITE, fontStyle: 'bold', fontSize: 7.5, cellPadding: 5 },
       alternateRowStyles: { fillColor: ZEBRA },
       columnStyles: {
-        0: { cellWidth: 150 },
+        0: { cellWidth: 72, fontStyle: 'bold' },
         3: { halign: 'center' },
         4: { halign: 'center' },
         5: { halign: 'center' },
         6: { halign: 'center' },
         7: { halign: 'center' },
       },
-      margin: { left: M, right: M, top: 70 },
-    });
-
-    // ---- Daily report entries table ----
-    const entriesBody = selected.entries.length
-      ? selected.entries.map((e) => {
-          const wo = workOrdersById[e.workOrderId];
-          return [
-            e.date || '-',
-            e.time || '-',
-            e.hours > 0 ? `${fmtHours(e.hours)}h` : '-',
-            wo ? wo.id : e.workOrderId || 'General',
-            e.notes || '-',
-          ];
-        })
-      : [['No daily reports submitted.', '', '', '', '']];
-
-    const tableEndY = (doc.lastAutoTable?.finalY || tableY) + 20;
-    autoTable(doc, {
-      startY: sectionHeader('Daily Report Entries', tableEndY) + 10,
-      head: [['Date', 'Time', 'Hours', 'Work Order', 'Notes']],
-      body: entriesBody,
-      theme: 'grid',
-      styles: { fontSize: 8, cellPadding: 5, textColor: BLACK, lineColor: BORDER, lineWidth: 0.6, valign: 'middle' },
-      headStyles: { fillColor: BLACK, textColor: WHITE, fontStyle: 'bold', fontSize: 8, cellPadding: 5 },
-      alternateRowStyles: { fillColor: ZEBRA },
-      columnStyles: {
-        0: { cellWidth: 70 },
-        1: { cellWidth: 50, halign: 'center' },
-        2: { cellWidth: 50, halign: 'center' },
-        3: { cellWidth: 90 },
-      },
-      margin: { left: M, right: M, top: 70 },
+      margin: { left: M, right: M, top: 60 },
     });
 
     drawFooter();
